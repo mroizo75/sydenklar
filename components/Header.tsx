@@ -41,8 +41,8 @@ export default function Header() {
               src={scrolled ? "/logo-svart.png" : "/logo-hvit.png"}
               alt="Sydenklar.no"
               width={500}
-              height={250}
-              className="h-40 lg:h-38 w-auto object-contain transition-opacity duration-300 group-hover:opacity-80"
+              height={200}
+              className="h-24 w-auto object-contain transition-opacity duration-300 group-hover:opacity-80"
               priority
             />
           </Link>

@@ -20,6 +20,7 @@ export interface RateHawkHotelSearchParams {
 
 export interface RateHawkHotel {
   id: string
+  hid?: number
   name: string
   address: string
   rating: number

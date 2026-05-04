@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Hotel static database (only lives on VPS, populated via npm run hotels:sync)
+/data/
+
+# Markdown-dokumentasjon (ikke nødvendig i repo)
+/markdown/
+*.md
+!README.md

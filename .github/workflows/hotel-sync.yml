@@ -1,0 +1,70 @@
+name: Hotel Static Data Sync
+
+on:
+  schedule:
+    # Kjør inkrementell sync kl. 03:00 UTC hver dag
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Sync mode'
+        required: true
+        default: 'incremental'
+        type: choice
+        options:
+          - incremental
+          - full
+          - status
+
+jobs:
+  sync:
+    name: Sync hotel data
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    env:
+      RATEHAWK_KEY_ID: ${{ secrets.RATEHAWK_KEY_ID }}
+      RATEHAWK_API_KEY: ${{ secrets.RATEHAWK_API_KEY }}
+      RATEHAWK_BASE_URL: ${{ secrets.RATEHAWK_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install system dependencies
+        run: sudo apt-get install -y zstd
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # Rebuild native modules (better-sqlite3) for the current runner
+      - name: Rebuild native addons
+        run: npm rebuild better-sqlite3
+
+      - name: Restore SQLite database cache
+        id: cache-db
+        uses: actions/cache@v4
+        with:
+          path: data/hotel-static.db
+          key: hotel-static-db-${{ github.run_id }}
+          restore-keys: |
+            hotel-static-db-
+
+      - name: Run sync
+        run: |
+          MODE="${{ github.event.inputs.mode || 'incremental' }}"
+          echo "Running $MODE sync..."
+          npx tsx scripts/sync-hotels.ts "$MODE"
+
+      - name: Save SQLite database
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/hotel-static.db
+          key: hotel-static-db-${{ github.run_id }}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createUser, getUserByEmail } from '@/lib/users-db'
+import { createUser, getUserByEmail, linkBookingsByEmail } from '@/lib/users-db'
 import { randomUUID } from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Passord må være minst 8 tegn' }, { status: 400 })
     }
 
-    const existing = getUserByEmail(emailTrimmed)
+    const existing = await getUserByEmail(emailTrimmed)
     if (existing) {
       return NextResponse.json({ error: 'En konto med denne e-posten finnes allerede' }, { status: 409 })
     }
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const bcrypt = await import('bcryptjs')
     const passwordHash = await bcrypt.hash(String(password), 12)
 
-    const user = createUser({
+    const user = await createUser({
       id: randomUUID(),
       email: emailTrimmed,
       passwordHash,
@@ -40,6 +40,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Kunne ikke opprette konto. Prøv igjen.' }, { status: 500 })
     }
+
+    // Koble eksisterende bookinger (gjort som gjest) til den nye kontoen
+    await linkBookingsByEmail(emailTrimmed, user.id)
 
     return NextResponse.json({ success: true, userId: user.id })
   } catch (error: unknown) {

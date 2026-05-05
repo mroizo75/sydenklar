@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { getBookingByPartnerOrderId } from '@/lib/users-db'
+import { getBookingByPartnerOrderId, linkBookingToUser } from '@/lib/users-db'
+import { auth } from '@/lib/auth'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
@@ -32,7 +33,10 @@ function CalendarIcon() {
 }
 
 async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
-  const booking = getBookingByPartnerOrderId(partnerOrderId)
+  const [booking, session] = await Promise.all([
+    getBookingByPartnerOrderId(partnerOrderId),
+    auth(),
+  ])
 
   if (!booking) {
     return (
@@ -50,6 +54,15 @@ async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
       </div>
     )
   }
+
+  // Koble booking til innlogget bruker automatisk hvis den ikke allerede er koblet
+  const userId = (session?.user as { id?: string })?.id ?? null
+  if (userId && !booking.userId) {
+    await linkBookingToUser(partnerOrderId, userId)
+  }
+
+  const isLoggedIn = !!session?.user
+  const guestEmail = booking.guestEmail
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '—'
@@ -75,6 +88,8 @@ async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
 
   const isConfirmed = booking.status === 'confirmed' || booking.status === 'paid'
 
+  const registerUrl = `/logg-inn?mode=register&email=${encodeURIComponent(guestEmail)}&ref=${encodeURIComponent(partnerOrderId)}`
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
       {/* Status header */}
@@ -95,6 +110,24 @@ async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
             : 'Vi behandler bookingen din. Du mottar e-post når det er klart.'}
         </p>
       </div>
+
+      {/* Registrering-banner — kun til ikke-innloggede gjester */}
+      {!isLoggedIn && (
+        <div className="bg-[var(--deep)] text-white rounded-2xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1">
+            <p className="font-semibold text-sm mb-0.5">Lagre bookingen på kontoen din</p>
+            <p className="text-white/70 text-xs">
+              Opprett en gratis konto med <span className="text-white font-medium">{guestEmail}</span> — bookingen kobles automatisk.
+            </p>
+          </div>
+          <Link
+            href={registerUrl}
+            className="shrink-0 bg-[var(--coral)] hover:opacity-90 transition-opacity text-white text-sm font-semibold px-5 py-2.5 rounded-xl whitespace-nowrap"
+          >
+            Opprett konto
+          </Link>
+        </div>
+      )}
 
       {/* Main card */}
       <div className="bg-white rounded-2xl border border-[var(--border)] overflow-hidden shadow-sm mb-6">

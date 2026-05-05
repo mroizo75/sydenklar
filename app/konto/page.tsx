@@ -36,8 +36,10 @@ export default async function KontoPage() {
   }
 
   const userId = (session.user as any).id
-  const user = getUserById(userId)
-  const bookings = getBookingsByUserId(userId)
+  const [user, bookings] = await Promise.all([
+    getUserById(userId),
+    getBookingsByUserId(userId),
+  ])
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '—'

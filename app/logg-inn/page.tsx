@@ -11,9 +11,11 @@ function LoggInnForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/konto"
+  const prefilledEmail = searchParams.get("email") || ""
+  const initialMode = searchParams.get("mode") === "register" ? "register" : "login"
 
-  const [mode, setMode] = useState<"login" | "register">("login")
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", phone: "" })
+  const [mode, setMode] = useState<"login" | "register">(initialMode)
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: prefilledEmail, password: "", phone: "" })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -90,6 +92,11 @@ function LoggInnForm() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {mode === "register" && prefilledEmail && (
+              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800">
+                Bookingen din kobles automatisk til denne kontoen ved registrering.
+              </div>
+            )}
             {mode === "register" && (
               <div className="grid grid-cols-2 gap-3">
                 <div>

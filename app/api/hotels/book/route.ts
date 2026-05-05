@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const userId = await getCurrentUserId()
     const bookingId = randomUUID()
 
-    createBooking({
+    await createBooking({
       id: bookingId,
       partnerOrderId,
       userId: userId ?? null,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
           : errorCode === 'rate_not_found'
           ? 'Rommet er ikke lenger tilgjengelig.'
           : 'En feil oppsto. Kontakt support.'
-      updateBookingStatus(partnerOrderId, 'failed')
+      await updateBookingStatus(partnerOrderId, 'failed')
       return NextResponse.json({ success: false, error: userMessage }, { status: 500 })
     }
 
@@ -130,8 +130,7 @@ export async function POST(request: NextRequest) {
     const isSuccess = finalStatus.status === 'ok' || finalStatus.status === 'confirmed'
     const orderId = (bookingResult as any).data?.order_id
 
-    // Oppdater booking i SQLite
-    updateBookingStatus(
+    await updateBookingStatus(
       partnerOrderId,
       isSuccess ? 'confirmed' : finalStatus.status,
       orderId ?? undefined,

@@ -1,71 +1,4 @@
-/**
- * SQLite tables for users and bookings.
- * Uses the same hotel-static.db database file via better-sqlite3.
- */
-
-import Database from 'better-sqlite3'
-import path from 'path'
-import fs from 'fs'
-
-const DB_PATH = path.join(process.cwd(), 'data', 'hotel-static.db')
-
-let _db: Database.Database | null = null
-
-function getDb(): Database.Database {
-  if (_db) return _db
-
-  const dir = path.dirname(DB_PATH)
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-
-  _db = new Database(DB_PATH)
-  _db.pragma('journal_mode = WAL')
-  _db.pragma('synchronous = NORMAL')
-
-  _db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id           TEXT PRIMARY KEY,
-      email        TEXT UNIQUE NOT NULL,
-      password_hash TEXT,
-      first_name   TEXT,
-      last_name    TEXT,
-      phone        TEXT,
-      created_at   INTEGER NOT NULL DEFAULT (unixepoch())
-    );
-
-    CREATE TABLE IF NOT EXISTS bookings (
-      id                TEXT PRIMARY KEY,
-      partner_order_id  TEXT UNIQUE NOT NULL,
-      user_id           TEXT,
-      guest_email       TEXT NOT NULL,
-      guest_first_name  TEXT NOT NULL,
-      guest_last_name   TEXT NOT NULL,
-      guest_phone       TEXT,
-      hotel_id          TEXT,
-      hotel_name        TEXT,
-      room_name         TEXT,
-      check_in          TEXT,
-      check_out         TEXT,
-      adults            INTEGER,
-      children          INTEGER DEFAULT 0,
-      rooms             INTEGER DEFAULT 1,
-      amount            REAL,
-      currency          TEXT,
-      stripe_payment_id TEXT,
-      ratehawk_order_id INTEGER,
-      status            TEXT DEFAULT 'pending',
-      cancellation_info TEXT,
-      created_at        INTEGER NOT NULL DEFAULT (unixepoch())
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_bookings_user_id   ON bookings(user_id);
-    CREATE INDEX IF NOT EXISTS idx_bookings_email     ON bookings(guest_email);
-    CREATE INDEX IF NOT EXISTS idx_bookings_partner   ON bookings(partner_order_id);
-  `)
-
-  return _db
-}
-
-// --- Users ---
+import { supabase } from './supabase'
 
 export interface UserRecord {
   id: string
@@ -74,66 +7,8 @@ export interface UserRecord {
   firstName?: string | null
   lastName?: string | null
   phone?: string | null
-  createdAt: number
+  createdAt: string
 }
-
-export function createUser(params: {
-  id: string
-  email: string
-  passwordHash?: string
-  firstName?: string
-  lastName?: string
-  phone?: string
-}): UserRecord | null {
-  try {
-    getDb().prepare(`
-      INSERT INTO users (id, email, password_hash, first_name, last_name, phone)
-      VALUES (@id, @email, @passwordHash, @firstName, @lastName, @phone)
-    `).run({
-      id: params.id,
-      email: params.email.toLowerCase().trim(),
-      passwordHash: params.passwordHash ?? null,
-      firstName: params.firstName ?? null,
-      lastName: params.lastName ?? null,
-      phone: params.phone ?? null,
-    })
-    return getUserById(params.id)
-  } catch {
-    return null
-  }
-}
-
-export function getUserByEmail(email: string): UserRecord | null {
-  try {
-    const row = getDb().prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim()) as any
-    return row ? mapUserRow(row) : null
-  } catch {
-    return null
-  }
-}
-
-export function getUserById(id: string): UserRecord | null {
-  try {
-    const row = getDb().prepare('SELECT * FROM users WHERE id = ?').get(id) as any
-    return row ? mapUserRow(row) : null
-  } catch {
-    return null
-  }
-}
-
-function mapUserRow(row: any): UserRecord {
-  return {
-    id: row.id,
-    email: row.email,
-    passwordHash: row.password_hash ?? null,
-    firstName: row.first_name ?? null,
-    lastName: row.last_name ?? null,
-    phone: row.phone ?? null,
-    createdAt: row.created_at,
-  }
-}
-
-// --- Bookings ---
 
 export interface BookingRecord {
   id: string
@@ -157,128 +32,197 @@ export interface BookingRecord {
   ratehawkOrderId?: number | null
   status: string
   cancellationInfo?: string | null
-  createdAt: number
+  createdAt: string
 }
 
-export function createBooking(params: Omit<BookingRecord, 'createdAt'>): BookingRecord | null {
-  try {
-    getDb().prepare(`
-      INSERT INTO bookings (
-        id, partner_order_id, user_id, guest_email, guest_first_name, guest_last_name,
-        guest_phone, hotel_id, hotel_name, room_name, check_in, check_out,
-        adults, children, rooms, amount, currency, stripe_payment_id,
-        ratehawk_order_id, status, cancellation_info
-      ) VALUES (
-        @id, @partnerOrderId, @userId, @guestEmail, @guestFirstName, @guestLastName,
-        @guestPhone, @hotelId, @hotelName, @roomName, @checkIn, @checkOut,
-        @adults, @children, @rooms, @amount, @currency, @stripePaymentId,
-        @ratehawkOrderId, @status, @cancellationInfo
-      )
-    `).run({
+// --- Users ---
+
+export async function createUser(params: {
+  id?: string
+  email: string
+  passwordHash?: string
+  firstName?: string
+  lastName?: string
+  phone?: string
+}): Promise<UserRecord | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .insert({
       id: params.id,
-      partnerOrderId: params.partnerOrderId,
-      userId: params.userId ?? null,
-      guestEmail: params.guestEmail,
-      guestFirstName: params.guestFirstName,
-      guestLastName: params.guestLastName,
-      guestPhone: params.guestPhone ?? null,
-      hotelId: params.hotelId ?? null,
-      hotelName: params.hotelName ?? null,
-      roomName: params.roomName ?? null,
-      checkIn: params.checkIn ?? null,
-      checkOut: params.checkOut ?? null,
+      email: params.email.toLowerCase().trim(),
+      password_hash: params.passwordHash ?? null,
+      first_name: params.firstName ?? null,
+      last_name: params.lastName ?? null,
+      phone: params.phone ?? null,
+    })
+    .select()
+    .single()
+
+  if (error) return null
+  return mapUserRow(data)
+}
+
+export async function getUserByEmail(email: string): Promise<UserRecord | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select()
+    .eq('email', email.toLowerCase().trim())
+    .maybeSingle()
+
+  if (error || !data) return null
+  return mapUserRow(data)
+}
+
+export async function getUserById(id: string): Promise<UserRecord | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select()
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return mapUserRow(data)
+}
+
+function mapUserRow(row: Record<string, unknown>): UserRecord {
+  return {
+    id: row.id as string,
+    email: row.email as string,
+    passwordHash: (row.password_hash as string | null) ?? null,
+    firstName: (row.first_name as string | null) ?? null,
+    lastName: (row.last_name as string | null) ?? null,
+    phone: (row.phone as string | null) ?? null,
+    createdAt: row.created_at as string,
+  }
+}
+
+// --- Bookings ---
+
+export async function createBooking(
+  params: Omit<BookingRecord, 'createdAt'>,
+): Promise<BookingRecord | null> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert({
+      id: params.id,
+      partner_order_id: params.partnerOrderId,
+      user_id: params.userId ?? null,
+      guest_email: params.guestEmail,
+      guest_first_name: params.guestFirstName,
+      guest_last_name: params.guestLastName,
+      guest_phone: params.guestPhone ?? null,
+      hotel_id: params.hotelId ?? null,
+      hotel_name: params.hotelName ?? null,
+      room_name: params.roomName ?? null,
+      check_in: params.checkIn ?? null,
+      check_out: params.checkOut ?? null,
       adults: params.adults ?? null,
       children: params.children ?? null,
       rooms: params.rooms ?? null,
       amount: params.amount ?? null,
       currency: params.currency ?? null,
-      stripePaymentId: params.stripePaymentId ?? null,
-      ratehawkOrderId: params.ratehawkOrderId ?? null,
+      stripe_payment_id: params.stripePaymentId ?? null,
+      ratehawk_order_id: params.ratehawkOrderId ?? null,
       status: params.status,
-      cancellationInfo: params.cancellationInfo ?? null,
+      cancellation_info: params.cancellationInfo ?? null,
     })
-    return getBookingByPartnerOrderId(params.partnerOrderId)
-  } catch {
-    return null
-  }
+    .select()
+    .single()
+
+  if (error) return null
+  return mapBookingRow(data)
 }
 
-export function updateBookingStatus(
+export async function updateBookingStatus(
   partnerOrderId: string,
   status: string,
   ratehawkOrderId?: number,
   stripePaymentId?: string,
-): void {
-  try {
-    getDb().prepare(`
-      UPDATE bookings SET
-        status = @status,
-        ratehawk_order_id = COALESCE(@ratehawkOrderId, ratehawk_order_id),
-        stripe_payment_id = COALESCE(@stripePaymentId, stripe_payment_id)
-      WHERE partner_order_id = @partnerOrderId
-    `).run({
-      partnerOrderId,
-      status,
-      ratehawkOrderId: ratehawkOrderId ?? null,
-      stripePaymentId: stripePaymentId ?? null,
-    })
-  } catch { /* ignore */ }
+): Promise<void> {
+  const update: Record<string, unknown> = { status }
+  if (ratehawkOrderId !== undefined) update.ratehawk_order_id = ratehawkOrderId
+  if (stripePaymentId !== undefined) update.stripe_payment_id = stripePaymentId
+
+  await supabase
+    .from('bookings')
+    .update(update)
+    .eq('partner_order_id', partnerOrderId)
 }
 
-export function getBookingByPartnerOrderId(partnerOrderId: string): BookingRecord | null {
-  try {
-    const row = getDb().prepare('SELECT * FROM bookings WHERE partner_order_id = ?').get(partnerOrderId) as any
-    return row ? mapBookingRow(row) : null
-  } catch {
-    return null
-  }
+export async function getBookingByPartnerOrderId(
+  partnerOrderId: string,
+): Promise<BookingRecord | null> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select()
+    .eq('partner_order_id', partnerOrderId)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return mapBookingRow(data)
 }
 
-export function getBookingsByUserId(userId: string): BookingRecord[] {
-  try {
-    const rows = getDb().prepare(
-      'SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC'
-    ).all(userId) as any[]
-    return rows.map(mapBookingRow)
-  } catch {
-    return []
-  }
+export async function getBookingsByUserId(userId: string): Promise<BookingRecord[]> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select()
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error || !data) return []
+  return data.map(mapBookingRow)
 }
 
-export function getBookingsByEmail(email: string): BookingRecord[] {
-  try {
-    const rows = getDb().prepare(
-      'SELECT * FROM bookings WHERE guest_email = ? ORDER BY created_at DESC'
-    ).all(email.toLowerCase()) as any[]
-    return rows.map(mapBookingRow)
-  } catch {
-    return []
-  }
+export async function getBookingsByEmail(email: string): Promise<BookingRecord[]> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select()
+    .eq('guest_email', email.toLowerCase())
+    .order('created_at', { ascending: false })
+
+  if (error || !data) return []
+  return data.map(mapBookingRow)
 }
 
-function mapBookingRow(row: any): BookingRecord {
+export async function linkBookingsByEmail(email: string, userId: string): Promise<void> {
+  await supabase
+    .from('bookings')
+    .update({ user_id: userId })
+    .eq('guest_email', email.toLowerCase().trim())
+    .is('user_id', null)
+}
+
+export async function linkBookingToUser(partnerOrderId: string, userId: string): Promise<void> {
+  await supabase
+    .from('bookings')
+    .update({ user_id: userId })
+    .eq('partner_order_id', partnerOrderId)
+    .is('user_id', null)
+}
+
+function mapBookingRow(row: Record<string, unknown>): BookingRecord {
   return {
-    id: row.id,
-    partnerOrderId: row.partner_order_id,
-    userId: row.user_id ?? null,
-    guestEmail: row.guest_email,
-    guestFirstName: row.guest_first_name,
-    guestLastName: row.guest_last_name,
-    guestPhone: row.guest_phone ?? null,
-    hotelId: row.hotel_id ?? null,
-    hotelName: row.hotel_name ?? null,
-    roomName: row.room_name ?? null,
-    checkIn: row.check_in ?? null,
-    checkOut: row.check_out ?? null,
-    adults: row.adults ?? null,
-    children: row.children ?? null,
-    rooms: row.rooms ?? null,
-    amount: row.amount ?? null,
-    currency: row.currency ?? null,
-    stripePaymentId: row.stripe_payment_id ?? null,
-    ratehawkOrderId: row.ratehawk_order_id ?? null,
-    status: row.status,
-    cancellationInfo: row.cancellation_info ?? null,
-    createdAt: row.created_at,
+    id: row.id as string,
+    partnerOrderId: row.partner_order_id as string,
+    userId: (row.user_id as string | null) ?? null,
+    guestEmail: row.guest_email as string,
+    guestFirstName: row.guest_first_name as string,
+    guestLastName: row.guest_last_name as string,
+    guestPhone: (row.guest_phone as string | null) ?? null,
+    hotelId: (row.hotel_id as string | null) ?? null,
+    hotelName: (row.hotel_name as string | null) ?? null,
+    roomName: (row.room_name as string | null) ?? null,
+    checkIn: (row.check_in as string | null) ?? null,
+    checkOut: (row.check_out as string | null) ?? null,
+    adults: (row.adults as number | null) ?? null,
+    children: (row.children as number | null) ?? null,
+    rooms: (row.rooms as number | null) ?? null,
+    amount: (row.amount as number | null) ?? null,
+    currency: (row.currency as string | null) ?? null,
+    stripePaymentId: (row.stripe_payment_id as string | null) ?? null,
+    ratehawkOrderId: (row.ratehawk_order_id as number | null) ?? null,
+    status: row.status as string,
+    cancellationInfo: (row.cancellation_info as string | null) ?? null,
+    createdAt: row.created_at as string,
   }
 }

@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
         const password = String(credentials?.password || '')
         if (!email || !password) return null
 
-        const user = getUserByEmail(email)
+        const user = await getUserByEmail(email)
         if (!user?.passwordHash) return null
 
         const bcrypt = await import('bcryptjs')

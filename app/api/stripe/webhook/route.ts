@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       const pi = event.data.object as Stripe.PaymentIntent
       const partnerOrderId = pi.metadata?.partner_order_id
       if (partnerOrderId) {
-        updateBookingStatus(partnerOrderId, 'paid', undefined, pi.id)
+        await updateBookingStatus(partnerOrderId, 'paid', undefined, pi.id)
       }
       break
     }
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       const pi = event.data.object as Stripe.PaymentIntent
       const partnerOrderId = pi.metadata?.partner_order_id
       if (partnerOrderId) {
-        updateBookingStatus(partnerOrderId, 'payment_failed', undefined, pi.id)
+        await updateBookingStatus(partnerOrderId, 'payment_failed', undefined, pi.id)
       }
       break
     }

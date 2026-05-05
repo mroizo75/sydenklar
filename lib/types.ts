@@ -35,6 +35,8 @@ export interface RateHawkHotel {
   images?: string[]
   amenities: string[]
   distance: string
+  lat?: number
+  lng?: number
 }
 
 export interface RateHawkHotelSearchResponse {

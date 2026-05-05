@@ -1,5 +1,5 @@
 import { RateHawkHotel } from "@/lib/types"
-import { MapPin, Star, Wifi, Car, UtensilsCrossed, Waves } from "lucide-react"
+import { MapPin, Star, Wifi, Car, UtensilsCrossed, Waves, ExternalLink } from "lucide-react"
 
 interface HotelCardProps {
   hotel: RateHawkHotel
@@ -76,7 +76,18 @@ export default function HotelCard({ hotel, onSelect }: HotelCardProps) {
             </h3>
             <div className="flex items-center gap-1 mt-1.5">
               <MapPin size={12} className="text-[var(--muted)] shrink-0" />
-              <p className="text-xs text-[var(--muted)] truncate">{hotel.address}</p>
+              <p className="text-xs text-[var(--muted)] truncate flex-1">{hotel.address}</p>
+              <a
+                href={`https://maps.google.com/maps?q=${encodeURIComponent(hotel.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="shrink-0 flex items-center gap-0.5 text-[10px] font-medium text-[var(--sea)] hover:text-[var(--deep)] transition-colors"
+                title="Vis i Google Maps"
+              >
+                <ExternalLink size={10} />
+                Kart
+              </a>
             </div>
           </div>
 

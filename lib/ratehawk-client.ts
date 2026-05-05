@@ -124,7 +124,7 @@ class RateHawkClient {
       }
 
       const residency = this.getUserResidency(userCountry)
-      const regionId = await this.getRegionId(params.destination)
+      const regionId = await this.getRegionId(params.destination, params.destinationType)
       if (!regionId) {
         throw new Error('Could not find region for destination')
       }
@@ -351,6 +351,9 @@ class RateHawkClient {
             distanceText = `${staticInfo.facts.beach_distance}m til strand`
           }
 
+          const lat = staticInfo?.latitude ?? staticInfo?.location?.latitude ?? staticInfo?.coordinates?.latitude ?? hotel.latitude ?? hotel.location?.latitude ?? undefined
+          const lng = staticInfo?.longitude ?? staticInfo?.location?.longitude ?? staticInfo?.coordinates?.longitude ?? hotel.longitude ?? hotel.location?.longitude ?? undefined
+
           return {
             id: hotelId?.toString() || '',
             name: hotelName,
@@ -366,7 +369,9 @@ class RateHawkClient {
             image: hotelImage,
             images: this.parseAllImages(staticInfo?.images),
             amenities: allAmenities,
-            distance: distanceText
+            distance: distanceText,
+            lat: typeof lat === 'number' ? lat : undefined,
+            lng: typeof lng === 'number' ? lng : undefined,
           }
         })
 
@@ -480,6 +485,9 @@ class RateHawkClient {
         if (d > 0) distanceText = d < 1 ? `${Math.round(d * 1000)}m fra sentrum` : `${d.toFixed(1)}km fra sentrum`
       }
 
+      const lat = staticInfo?.latitude ?? staticInfo?.location?.latitude ?? staticInfo?.coordinates?.latitude ?? hotel.latitude ?? hotel.location?.latitude ?? undefined
+      const lng = staticInfo?.longitude ?? staticInfo?.location?.longitude ?? staticInfo?.coordinates?.longitude ?? hotel.longitude ?? hotel.location?.longitude ?? undefined
+
       return {
         id: hotelId?.toString() || '',
         name: hotelName,
@@ -489,7 +497,9 @@ class RateHawkClient {
         image: hotelImage,
         images: this.parseAllImages(staticInfo?.images),
         amenities: allAmenities,
-        distance: distanceText
+        distance: distanceText,
+        lat: typeof lat === 'number' ? lat : undefined,
+        lng: typeof lng === 'number' ? lng : undefined,
       }
     })
 
@@ -705,11 +715,10 @@ class RateHawkClient {
       .join(' ')
   }
 
-  private async getRegionId(destination: string): Promise<string | null> {
+  private async getRegionId(destination: string, destinationType?: string): Promise<string | null> {
     try {
       if (/^\d+$/.test(destination)) {
-        const destNum = parseInt(destination)
-        if (destNum > 10000000) return destination
+        // Ren numerisk: hotell-hid (≥5 siffer) eller region-id — returner direkte
         return destination
       }
 
@@ -1128,6 +1137,7 @@ class RateHawkClient {
         book_hash: params.bookHash,
         price_increase_percent: 10,
         language: 'en',
+        currency: params.currency || 'NOK',
         user_ip: '82.29.0.86'
       }
 
@@ -1141,7 +1151,9 @@ class RateHawkClient {
       }
 
       if (data?.data) {
-        const returnedBookHash: string | null = data.data.book_hash || null
+        // Ratehawk returnerer ny book_hash fra prebook. Hvis den mangler (f.eks. sandkasse),
+        // faller vi tilbake til den originale rate-hashen slik at finishBooking kan forsøkes.
+        const returnedBookHash: string = data.data.book_hash || params.bookHash
         return {
           success: true,
           data: {

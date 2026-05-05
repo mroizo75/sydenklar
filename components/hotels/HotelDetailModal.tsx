@@ -64,7 +64,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
   const [hotel, setHotel] = useState<HotelDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [activeTab, setActiveTab] = useState<"rooms" | "info" | "fasiliteter">("rooms")
+  const [activeTab, setActiveTab] = useState<"rooms" | "info" | "fasiliteter" | "kart">("rooms")
   const [galleryIndex, setGalleryIndex] = useState(0)
   const [showGallery, setShowGallery] = useState(false)
 
@@ -344,7 +344,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
 
               {/* Tabs */}
               <div className="flex overflow-x-auto border-b border-[var(--border)] px-6 scrollbar-none">
-                {(["rooms", "info", "fasiliteter"] as const).map(tab => (
+                {(["rooms", "info", "fasiliteter", "kart"] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -354,7 +354,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                         : "border-transparent text-[var(--muted)] hover:text-[var(--deep)]"
                     }`}
                   >
-                    {tab === "rooms" ? `Rom (${hotel.total_rooms})` : tab === "info" ? "Om hotellet" : "Fasiliteter"}
+                    {tab === "rooms" ? `Rom (${hotel.total_rooms})` : tab === "info" ? "Om hotellet" : tab === "fasiliteter" ? "Fasiliteter" : "Kart"}
                   </button>
                 ))}
               </div>
@@ -505,6 +505,36 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                     ) : (
                       <p className="text-sm text-[var(--muted)]">Ingen beskrivelse tilgjengelig.</p>
                     )}
+                  </div>
+                )}
+
+                {/* KART-TAB */}
+                {activeTab === "kart" && (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl overflow-hidden border border-[var(--border)]" style={{ height: 400 }}>
+                      <iframe
+                        title="Hotellets beliggenhet"
+                        width="100%"
+                        height="100%"
+                        loading="lazy"
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(hotel.address)}&output=embed&z=15`}
+                        className="border-0"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-[var(--muted)] flex items-center gap-1.5">
+                        <MapPin size={13} className="text-[var(--coral)]" />
+                        {hotel.address}
+                      </p>
+                      <a
+                        href={`https://maps.google.com/maps?q=${encodeURIComponent(hotel.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-[var(--sea)] hover:text-[var(--deep)] transition-colors whitespace-nowrap"
+                      >
+                        Åpne i Google Maps ↗
+                      </a>
+                    </div>
                   </div>
                 )}
 

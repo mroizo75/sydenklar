@@ -1,9 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { SlidersHorizontal, ArrowUpDown, Loader2 } from "lucide-react"
+import dynamic from "next/dynamic"
+import { SlidersHorizontal, ArrowUpDown, Loader2, List, Map } from "lucide-react"
 import { RateHawkHotel } from "@/lib/types"
 import HotelCard from "./HotelCard"
+
+const HotelMap = dynamic(() => import("./HotelMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-[var(--sand-light)] rounded-2xl">
+      <div className="flex flex-col items-center gap-2">
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--coral)] border-t-transparent animate-spin" />
+        <p className="text-sm text-[var(--muted)]">Laster kart...</p>
+      </div>
+    </div>
+  ),
+})
 
 interface HotelResultsProps {
   hotels: RateHawkHotel[]
@@ -43,6 +56,7 @@ export default function HotelResults({
   const [showFilters, setShowFilters] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [loadMoreError, setLoadMoreError] = useState("")
+  const [viewMode, setViewMode] = useState<"list" | "map">("list")
 
   const handleLoadMore = async () => {
     if (!searchId || !onLoadMore || loadingMore) return
@@ -90,33 +104,61 @@ export default function HotelResults({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Filter toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border transition-colors ${
-              showFilters
-                ? "bg-[var(--deep)] text-white border-[var(--deep)]"
-                : "border-[var(--border)] text-[var(--deep)] hover:border-[var(--deep)]"
-            }`}
-          >
-            <SlidersHorizontal size={15} />
-            Filter
-          </button>
-
-          {/* Sortering */}
-          <div className="flex items-center gap-2 border border-[var(--border)] rounded-xl px-3 py-2">
-            <ArrowUpDown size={14} className="text-[var(--muted)] shrink-0" />
-            <select
-              value={sortKey}
-              onChange={e => setSortKey(e.target.value as SortKey)}
-              className="text-sm text-[var(--deep)] bg-transparent outline-none cursor-pointer"
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Liste/Kart-toggle */}
+          <div className="flex items-center rounded-xl border border-[var(--border)] overflow-hidden">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                viewMode === "list"
+                  ? "bg-[var(--deep)] text-white"
+                  : "text-[var(--deep)] hover:bg-[var(--sand-light)]"
+              }`}
             >
-              {SORT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              <List size={14} /> Liste
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                viewMode === "map"
+                  ? "bg-[var(--deep)] text-white"
+                  : "text-[var(--deep)] hover:bg-[var(--sand-light)]"
+              }`}
+            >
+              <Map size={14} /> Kart
+            </button>
           </div>
+
+          {/* Filter toggle — kun i listevisning */}
+          {viewMode === "list" && (
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border transition-colors ${
+                showFilters
+                  ? "bg-[var(--deep)] text-white border-[var(--deep)]"
+                  : "border-[var(--border)] text-[var(--deep)] hover:border-[var(--deep)]"
+              }`}
+            >
+              <SlidersHorizontal size={15} />
+              Filter
+            </button>
+          )}
+
+          {/* Sortering — kun i listevisning */}
+          {viewMode === "list" && (
+            <div className="flex items-center gap-2 border border-[var(--border)] rounded-xl px-3 py-2">
+              <ArrowUpDown size={14} className="text-[var(--muted)] shrink-0" />
+              <select
+                value={sortKey}
+                onChange={e => setSortKey(e.target.value as SortKey)}
+                className="text-sm text-[var(--deep)] bg-transparent outline-none cursor-pointer"
+              >
+                {SORT_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -144,47 +186,56 @@ export default function HotelResults({
         </div>
       )}
 
-      {/* Hotellkort */}
-      {sortedAndFiltered.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="font-display text-2xl text-[var(--deep)]">Ingen hoteller funnet</p>
-          <p className="text-[var(--muted)] mt-2">Prøv å justere filtrene dine.</p>
+      {/* Kartvisning */}
+      {viewMode === "map" && (
+        <div style={{ height: "calc(100vh - 280px)", minHeight: 480 }}>
+          <HotelMap hotels={sortedAndFiltered} onSelectHotel={onSelectHotel} />
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {sortedAndFiltered.map(hotel => (
-              <HotelCard
-                key={hotel.id}
-                hotel={hotel}
-                onSelect={onSelectHotel}
-                searchParams={searchParams}
-              />
-            ))}
-          </div>
+      )}
 
-          {hasMore && onLoadMore && (
-            <div className="mt-10 text-center space-y-3">
-              {loadMoreError && (
-                <p className="text-sm text-red-500">{loadMoreError} — prøv å søke på nytt.</p>
-              )}
-              <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-[var(--deep)] text-white font-medium text-sm hover:bg-[var(--deep)]/90 transition-colors disabled:opacity-60"
-              >
-                {loadingMore ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Laster hoteller...
-                  </>
-                ) : (
-                  `Vis flere hoteller (${totalResults - hotels.length} gjenstår)`
-                )}
-              </button>
+      {/* Listevisning */}
+      {viewMode === "list" && (
+        sortedAndFiltered.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="font-display text-2xl text-[var(--deep)]">Ingen hoteller funnet</p>
+            <p className="text-[var(--muted)] mt-2">Prøv å justere filtrene dine.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {sortedAndFiltered.map(hotel => (
+                <HotelCard
+                  key={hotel.id}
+                  hotel={hotel}
+                  onSelect={onSelectHotel}
+                  searchParams={searchParams}
+                />
+              ))}
             </div>
-          )}
-        </>
+
+            {hasMore && onLoadMore && (
+              <div className="mt-10 text-center space-y-3">
+                {loadMoreError && (
+                  <p className="text-sm text-red-500">{loadMoreError} — prøv å søke på nytt.</p>
+                )}
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-[var(--deep)] text-white font-medium text-sm hover:bg-[var(--deep)]/90 transition-colors disabled:opacity-60"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Laster hoteller...
+                    </>
+                  ) : (
+                    `Vis flere hoteller (${totalResults - hotels.length} gjenstår)`
+                  )}
+                </button>
+              </div>
+            )}
+          </>
+        )
       )}
     </div>
   )

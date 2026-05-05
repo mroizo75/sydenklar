@@ -76,6 +76,14 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
     setDestinationId("")
     setDestinationType("")
     if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    // Direkte hotell-ID-søk: 5+ siffer
+    if (/^\d{5,}$/.test(value.trim())) {
+      setSuggestions([{ id: value.trim(), name: `Hotell-ID: ${value.trim()}`, type: "hotel", country: "Søk direkte" }])
+      setShowSuggestions(true)
+      return
+    }
+
     if (value.length >= 2) {
       debounceRef.current = setTimeout(() => fetchSuggestions(value), 300)
       setShowSuggestions(true)
@@ -161,10 +169,17 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!destination || !checkIn || !checkOut) return
+
+    // Fallback: ren numerisk input uten dropdown-valg → behandles som hotell-hid
+    const rawId = destination.trim()
+    const isRawHotelId = /^\d{5,}$/.test(rawId) && !destinationId
+    const resolvedDestination = destinationId || rawId
+    const resolvedType = destinationType || (isRawHotelId ? "hotel" : "")
+
     onSearch({
-      destination: destinationId || destination,
-      destinationId,
-      destinationType,
+      destination: resolvedDestination,
+      destinationId: destinationId || (isRawHotelId ? rawId : ""),
+      destinationType: resolvedType,
       checkIn,
       checkOut,
       roomConfigs,

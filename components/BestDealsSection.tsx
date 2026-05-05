@@ -137,7 +137,7 @@ function DealCard({ deal, checkIn, checkOut, onOpen }: { deal: Deal; checkIn: st
   return (
     <button
       onClick={onOpen}
-      className="group flex-none w-72 sm:w-80 h-[420px] bg-white rounded-2xl ring-1 ring-[var(--border)] card-hover flex flex-col text-left"
+      className="group flex-none w-72 sm:w-80 h-[420px] bg-white rounded-2xl ring-1 ring-[var(--border)] card-hover flex flex-col text-left cursor-pointer"
     >
       {/* Bilde – fast høyde */}
       <div className="relative overflow-hidden rounded-t-2xl shrink-0" style={{ height: '200px' }}>

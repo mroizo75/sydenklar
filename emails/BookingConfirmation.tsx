@@ -209,22 +209,26 @@ export function BookingConfirmationEmail({
                         </table>
 
                         {/* Cancellation */}
-                        {cancellationPolicy && (
-                          <table width="100%" cellPadding="0" cellSpacing="0" style={{ backgroundColor: '#fff8f0', border: '1px solid #fed7aa', borderRadius: '10px', marginBottom: '24px' }}>
-                            <tbody>
-                              <tr>
-                                <td style={{ padding: '16px 20px' }}>
-                                  <p style={{ margin: '0 0 4px', color: '#92400e', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                    Avbestillingsvilkår
-                                  </p>
-                                  <p style={{ margin: 0, color: '#78350f', fontSize: '14px', lineHeight: '1.5' }}>
-                                    {cancellationPolicy}
-                                  </p>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        )}
+                        <table width="100%" cellPadding="0" cellSpacing="0" style={{ backgroundColor: '#fff8f0', border: '1px solid #fed7aa', borderRadius: '10px', marginBottom: '24px' }}>
+                          <tbody>
+                            <tr>
+                              <td style={{ padding: '16px 20px' }}>
+                                <p style={{ margin: '0 0 6px', color: '#92400e', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                  Avbestillingsvilkår
+                                </p>
+                                <p style={{ margin: '0 0 8px', color: '#78350f', fontSize: '14px', lineHeight: '1.5' }}>
+                                  {cancellationPolicy || 'Se bookingdetaljer for fullstendige avbestillingsvilkår.'}
+                                </p>
+                                <a
+                                  href={`${baseUrl}/hjelp/avbestilling`}
+                                  style={{ color: '#c8623a', fontSize: '13px', textDecoration: 'none', fontWeight: 600 }}
+                                >
+                                  Les om avbestillingsregler →
+                                </a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
 
                         {/* CTA */}
                         <table width="100%" cellPadding="0" cellSpacing="0">
@@ -257,6 +261,21 @@ export function BookingConfirmationEmail({
                     {/* Footer */}
                     <tr>
                       <td style={{ backgroundColor: '#f5f0eb', borderRadius: '0 0 12px 12px', padding: '24px 40px', textAlign: 'center', borderTop: '1px solid #e5e0d8' }}>
+                        <table width="100%" cellPadding="0" cellSpacing="0" style={{ marginBottom: '12px' }}>
+                          <tbody>
+                            <tr>
+                              <td align="center">
+                                <a href={`${baseUrl}/hjelp/avbestilling`} style={{ color: '#c8623a', fontSize: '12px', textDecoration: 'none', margin: '0 10px' }}>Avbestilling</a>
+                                <span style={{ color: '#d1d5db', fontSize: '12px' }}>·</span>
+                                <a href={`${baseUrl}/faq`} style={{ color: '#c8623a', fontSize: '12px', textDecoration: 'none', margin: '0 10px' }}>FAQ</a>
+                                <span style={{ color: '#d1d5db', fontSize: '12px' }}>·</span>
+                                <a href={`${baseUrl}/support`} style={{ color: '#c8623a', fontSize: '12px', textDecoration: 'none', margin: '0 10px' }}>Kundestøtte</a>
+                                <span style={{ color: '#d1d5db', fontSize: '12px' }}>·</span>
+                                <a href={`${baseUrl}/vilkar`} style={{ color: '#c8623a', fontSize: '12px', textDecoration: 'none', margin: '0 10px' }}>Vilkår</a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                         <p style={{ margin: '0 0 8px', color: '#9ca3af', fontSize: '12px' }}>
                           Har du spørsmål? Kontakt oss på{' '}
                           <a href="mailto:hjelp@sydenklar.no" style={{ color: '#c8623a', textDecoration: 'none' }}>

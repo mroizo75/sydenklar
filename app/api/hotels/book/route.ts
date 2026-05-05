@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       stripePaymentIntentId,
       hotelId,
       hotelName,
+      hotelAddress,
       roomName,
       checkIn,
       checkOut,
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
       children,
       amount,
       currency,
+      cancellationPolicy,
     } = body
 
     if (!partnerOrderId || !guestInfo || !paymentType) {
@@ -155,7 +157,8 @@ export async function POST(request: NextRequest) {
         partnerOrderId,
         amount: amount != null ? parseFloat(String(amount)) : 0,
         currency: currency || 'NOK',
-        hotelAddress: undefined,
+        hotelAddress: hotelAddress ?? undefined,
+        cancellationPolicy: cancellationPolicy ?? undefined,
       })
     }
 

@@ -187,30 +187,49 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
   })()
 
   // Always derive price from prebook data if available, otherwise from room
+  const STRIPE_SUPPORTED = new Set([
+    'usd','aed','afn','all','amd','ang','aoa','ars','aud','awg','azn','bam','bbd','bdt','bgn',
+    'bif','bmd','bnd','bob','brl','bsd','bwp','byn','bzd','cad','cdf','chf','clp','cny','cop',
+    'crc','cve','czk','djf','dkk','dop','dzd','egp','etb','eur','fjd','fkp','gbp','gel','gip',
+    'gmd','gnf','gtq','gyd','hkd','hnl','hrk','htg','huf','idr','ils','inr','isk','jmd','jpy',
+    'kes','kgs','khr','kmf','krw','kyd','kzt','lak','lbp','lkr','lrd','lsl','mad','mdl','mga',
+    'mkd','mmk','mnt','mop','mur','mvr','mwk','mxn','myr','mzn','nad','ngn','nio','nok','npr',
+    'nzd','pab','pen','pgk','php','pkr','pln','pyg','qar','ron','rsd','rub','rwf','sar','sbd',
+    'scr','sek','sgd','shp','sle','sos','srd','std','szl','thb','tjs','top','try','ttd','twd',
+    'tzs','uah','ugx','uyu','uzs','vnd','vuv','wst','xaf','xcd','xcg','xof','xpf','yer','zar','zmw',
+  ])
+
   const getPrice = useCallback((prebookOverride?: any) => {
     const data = prebookOverride ?? prebookData
+
+    // Hjelpefunksjon: hent beste pris fra en payment_types-liste
+    const bestFrom = (types: any[]) => {
+      const sorted = [...types].sort(
+        (a: any, b: any) => parseFloat(a.amount || "999999") - parseFloat(b.amount || "999999")
+      )
+      return {
+        amount: parseFloat(sorted[0].amount || "0"),
+        currency: (sorted[0].currency_code || "NOK") as string,
+        type: (sorted[0].type || "now") as "deposit" | "now",
+      }
+    }
+
+    // Romets opprinnelige pris (hentet med currency=NOK fra hotel details)
+    const roomPaymentTypes = room.payment_options?.payment_types
+    const roomPrice = roomPaymentTypes?.length ? bestFrom(roomPaymentTypes) : null
+
     if (data?.payment_types?.length) {
-      const sorted = [...data.payment_types].sort(
-        (a: any, b: any) => parseFloat(a.amount || "999999") - parseFloat(b.amount || "999999")
-      )
-      return {
-        amount: parseFloat(sorted[0].amount || "0"),
-        currency: sorted[0].currency_code || "NOK",
-        type: (sorted[0].type || "now") as "deposit" | "now",
+      const prebookPrice = bestFrom(data.payment_types)
+      // Hvis prebook-valutaen ikke støttes av Stripe-NO → bruk romets NOK-pris
+      if (!STRIPE_SUPPORTED.has(prebookPrice.currency.toLowerCase()) && roomPrice) {
+        return roomPrice
       }
+      return prebookPrice
     }
-    const paymentTypes = room.payment_options?.payment_types
-    if (paymentTypes?.length) {
-      const sorted = [...paymentTypes].sort(
-        (a: any, b: any) => parseFloat(a.amount || "999999") - parseFloat(b.amount || "999999")
-      )
-      return {
-        amount: parseFloat(sorted[0].amount || "0"),
-        currency: sorted[0].currency_code || "NOK",
-        type: (sorted[0].type || "now") as "deposit" | "now",
-      }
-    }
+
+    if (roomPrice) return roomPrice
     return { amount: 0, currency: "NOK", type: "now" as const }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prebookData, room.payment_options?.payment_types])
 
   const price = getPrice()
@@ -322,8 +341,8 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
     setStep("booking")
     try {
       const bookHash: string = prebook?.book_hash
-      if (!bookHash || !bookHash.startsWith("p-")) {
-        setError("Ugyldig booking-hash mottatt. Prøv igjen.")
+      if (!bookHash || typeof bookHash !== "string" || bookHash.trim().length < 4) {
+        setError("Booking-hash mangler. Prøv å velge rommet på nytt.")
         setStep("error")
         return
       }
@@ -355,6 +374,7 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
           remarks: guestInfo.remarks,
           hotelId: hotel.id,
           hotelName: hotel.name,
+          hotelAddress: hotel.address,
           roomName: room.room_name,
           checkIn: searchParams.checkIn,
           checkOut: searchParams.checkOut,
@@ -363,6 +383,19 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
           roomCount: searchParams.roomCount ?? 1,
           amount: confirmedPrice.amount,
           currency: confirmedPrice.currency,
+          cancellationPolicy: (() => {
+            const policies = room.cancellation_penalties?.policies
+            if (!policies?.length) return undefined
+            const first = policies[0]
+            if (first.amount_charge === '0' || first.amount_charge === 0) {
+              return first.deadline
+                ? `Gratis avbestilling frem til ${new Date(first.deadline).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                : 'Gratis avbestilling'
+            }
+            return first.deadline
+              ? `Ikke-refunderbar etter ${new Date(first.deadline).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })}`
+              : 'Ikke-refunderbar'
+          })(),
         }),
       })
 

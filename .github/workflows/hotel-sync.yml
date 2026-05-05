@@ -26,6 +26,7 @@ jobs:
       RATEHAWK_KEY_ID: ${{ secrets.RATEHAWK_KEY_ID }}
       RATEHAWK_API_KEY: ${{ secrets.RATEHAWK_API_KEY }}
       RATEHAWK_BASE_URL: ${{ secrets.RATEHAWK_BASE_URL }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout
@@ -43,28 +44,20 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      # Rebuild native modules (better-sqlite3) for the current runner
       - name: Rebuild native addons
         run: npm rebuild better-sqlite3
 
       - name: Restore SQLite database cache
-        id: cache-db
         uses: actions/cache@v4
         with:
           path: data/hotel-static.db
-          key: hotel-static-db-${{ github.run_id }}
+          key: hotel-static-db-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             hotel-static-db-
+          save-always: true
 
       - name: Run sync
         run: |
           MODE="${{ github.event.inputs.mode || 'incremental' }}"
           echo "Running $MODE sync..."
           npx tsx scripts/sync-hotels.ts "$MODE"
-
-      - name: Save SQLite database
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: data/hotel-static.db
-          key: hotel-static-db-${{ github.run_id }}

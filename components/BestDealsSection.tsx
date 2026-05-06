@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { ArrowRight, ChevronLeft, ChevronRight, Star, Tag, Wifi, Waves, UtensilsCrossed } from 'lucide-react'
-import DealBookingModal from './hotels/DealBookingModal'
 
 interface Deal {
   id: string
@@ -131,12 +131,26 @@ function getNextWeekendDates(): { checkIn: string; checkOut: string } {
   return { checkIn: formatDate(friday), checkOut: formatDate(sunday) }
 }
 
-function DealCard({ deal, checkIn, checkOut, onOpen }: { deal: Deal; checkIn: string; checkOut: string; onOpen: () => void }) {
+function buildHotellUrl(deal: Deal, checkIn: string, checkOut: string): string {
+  const params = new URLSearchParams({
+    destinasjon: deal.destination,
+    destinationId: deal.destinationId,
+    destinationType: deal.destinationType,
+    checkIn,
+    checkOut,
+    adults: '2',
+    rooms: '1',
+  })
+  return `/hoteller?${params.toString()}`
+}
+
+function DealCard({ deal, checkIn, checkOut }: { deal: Deal; checkIn: string; checkOut: string }) {
   const discountPct = Math.round((1 - deal.pricePerNight / deal.originalPrice) * 100)
+  const href = buildHotellUrl(deal, checkIn, checkOut)
 
   return (
-    <button
-      onClick={onOpen}
+    <Link
+      href={href}
       className="group flex-none w-72 sm:w-80 h-[420px] bg-white rounded-2xl ring-1 ring-[var(--border)] card-hover flex flex-col text-left cursor-pointer"
     >
       {/* Bilde – fast høyde */}
@@ -149,7 +163,6 @@ function DealCard({ deal, checkIn, checkOut, onOpen }: { deal: Deal; checkIn: st
           loading="lazy"
         />
 
-        {/* Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
         {/* Badges */}
@@ -173,9 +186,8 @@ function DealCard({ deal, checkIn, checkOut, onOpen }: { deal: Deal; checkIn: st
         </div>
       </div>
 
-      {/* Innhold – fyller resten */}
+      {/* Innhold */}
       <div className="p-4 flex flex-col flex-1">
-        {/* Stjerner */}
         <div className="flex items-center gap-0.5 mb-2">
           {Array.from({ length: deal.stars }).map((_, i) => (
             <Star key={i} size={11} fill="var(--gold)" stroke="none" />
@@ -186,7 +198,6 @@ function DealCard({ deal, checkIn, checkOut, onOpen }: { deal: Deal; checkIn: st
           {deal.hotelName}
         </h3>
 
-        {/* Fasiliteter */}
         <div className="flex flex-wrap gap-1.5 mt-2.5">
           {deal.amenities.slice(0, 3).map(amenity => (
             <span
@@ -201,7 +212,7 @@ function DealCard({ deal, checkIn, checkOut, onOpen }: { deal: Deal; checkIn: st
           ))}
         </div>
 
-        {/* Pris – skyves til bunnen */}
+        {/* Pris + CTA */}
         <div className="flex items-end justify-between mt-auto pt-3 border-t border-[var(--border)]">
           <div>
             <p className="text-[11px] text-[var(--muted)] line-through">
@@ -219,18 +230,17 @@ function DealCard({ deal, checkIn, checkOut, onOpen }: { deal: Deal; checkIn: st
           </div>
         </div>
       </div>
-    </button>
+    </Link>
   )
 }
 
-const CARD_W = 320 + 20 // sm:w-80 (320px) + gap-5 (20px)
+const CARD_W = 320 + 20
 
 export default function BestDealsSection() {
   const [dates, setDates] = useState({ checkIn: '', checkOut: '' })
   const [formattedDate, setFormattedDate] = useState('')
   const [canLeft, setCanLeft] = useState(false)
   const [canRight, setCanRight] = useState(true)
-  const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -296,8 +306,6 @@ export default function BestDealsSection() {
 
         {/* Karusell */}
         <div className="group/carousel relative">
-
-          {/* Venstre hover-sone */}
           {canLeft && (
             <div className="absolute left-0 top-0 bottom-4 w-20 z-20 flex items-center justify-start pl-2 cursor-pointer"
               onClick={() => scroll('left')}
@@ -312,7 +320,6 @@ export default function BestDealsSection() {
             </div>
           )}
 
-          {/* Høyre hover-sone */}
           {canRight && (
             <div className="absolute right-0 top-0 bottom-4 w-20 z-20 flex items-center justify-end pr-2 cursor-pointer"
               onClick={() => scroll('right')}
@@ -337,7 +344,6 @@ export default function BestDealsSection() {
                   deal={deal}
                   checkIn={dates.checkIn}
                   checkOut={dates.checkOut}
-                  onOpen={() => setActiveDeal(deal)}
                 />
               </div>
             ))}
@@ -348,15 +354,6 @@ export default function BestDealsSection() {
           Priser er veiledende og kan variere. Endelig pris bekreftes ved søk.
         </p>
       </div>
-
-      {activeDeal && (
-        <DealBookingModal
-          deal={activeDeal}
-          checkIn={dates.checkIn}
-          checkOut={dates.checkOut}
-          onClose={() => setActiveDeal(null)}
-        />
-      )}
     </section>
   )
 }

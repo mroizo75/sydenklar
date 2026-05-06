@@ -1,42 +1,197 @@
 import { RateHawkHotel } from "@/lib/types"
-import { MapPin, Star, Wifi, Car, UtensilsCrossed, Waves, ExternalLink } from "lucide-react"
+import { MapPin, Star, Wifi, Car, UtensilsCrossed, Waves, Coffee, Dumbbell, Sparkles, Wind } from "lucide-react"
 
 interface HotelCardProps {
   hotel: RateHawkHotel
   onSelect: (hotel: RateHawkHotel) => void
+  onHover?: (id: string | null) => void
   searchParams: {
     checkIn: string
     checkOut: string
     adults: number
     children: number[]
   }
+  variant?: "vertical" | "horizontal"
 }
 
-const AMENITY_ICONS: Record<string, React.ReactNode> = {
-  "Gratis WiFi": <Wifi size={12} />,
-  "WiFi": <Wifi size={12} />,
-  "Gratis parkering": <Car size={12} />,
-  "Parkering": <Car size={12} />,
-  "Restaurant": <UtensilsCrossed size={12} />,
-  "Basseng": <Waves size={12} />,
-  "Svømmebasseng": <Waves size={12} />,
+const AMENITY_META: Record<string, { icon: React.ReactNode; label: string }> = {
+  "Gratis WiFi":          { icon: <Wifi size={12} />,          label: "Gratis WiFi" },
+  "WiFi":                 { icon: <Wifi size={12} />,          label: "WiFi" },
+  "Gratis parkering":     { icon: <Car size={12} />,           label: "Gratis parkering" },
+  "Parkering":            { icon: <Car size={12} />,           label: "Parkering" },
+  "Restaurant":           { icon: <UtensilsCrossed size={12} />, label: "Restaurant" },
+  "Basseng":              { icon: <Waves size={12} />,         label: "Basseng" },
+  "Svømmebasseng":        { icon: <Waves size={12} />,         label: "Svømmebasseng" },
+  "Utendørs basseng":     { icon: <Waves size={12} />,         label: "Utendørs basseng" },
+  "Innendørs basseng":    { icon: <Waves size={12} />,         label: "Innendørs basseng" },
+  "Frokost inkludert":    { icon: <Coffee size={12} />,        label: "Frokost inkludert" },
+  "Frokostbuffet":        { icon: <Coffee size={12} />,        label: "Frokostbuffet" },
+  "Frokost":              { icon: <Coffee size={12} />,        label: "Frokost" },
+  "Alt inkludert":        { icon: <Coffee size={12} />,        label: "Alt inkludert" },
+  "Treningssenter":       { icon: <Dumbbell size={12} />,      label: "Treningssenter" },
+  "Spa":                  { icon: <Sparkles size={12} />,      label: "Spa" },
+  "Aircondition":         { icon: <Wind size={12} />,          label: "Aircondition" },
 }
 
-export default function HotelCard({ hotel, onSelect }: HotelCardProps) {
-  const nights = hotel.price.nights || 1
-  const topAmenities = hotel.amenities.slice(0, 4)
+function getAmenityMeta(name: string) {
+  return AMENITY_META[name] ?? { icon: null, label: name }
+}
+
+function StarRow({ rating }: { rating: number }) {
+  if (!rating) return null
+  const full = Math.floor(rating)
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          size={11}
+          fill={i < full ? "var(--gold)" : "transparent"}
+          stroke={i < full ? "none" : "#d1d5db"}
+          strokeWidth={1.5}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ─── Horizontal (desktop split-panel) ────────────────────────────────────────
+function HorizontalCard({ hotel, onSelect, onHover }: { hotel: RateHawkHotel; onSelect: (h: RateHawkHotel) => void; onHover?: (id: string | null) => void }) {
   const hasImage = hotel.image && !hotel.image.startsWith("data:image")
+  const nights = hotel.price.nights || 1
+  const shownAmenities = hotel.amenities.slice(0, 6)
+  const extraCount = hotel.amenities.length - shownAmenities.length
 
   return (
     <article
-      className="bg-white rounded-2xl overflow-hidden border border-[var(--border)] card-hover cursor-pointer group"
+      className="bg-white rounded-xl border border-[var(--border)] hover:border-[var(--deep)]/25 hover:shadow-lg transition-all cursor-pointer group flex overflow-hidden"
+      style={{ minHeight: 140 }}
       onClick={() => onSelect(hotel)}
+      onMouseEnter={() => onHover?.(hotel.id)}
+      onMouseLeave={() => onHover?.(null)}
       role="button"
       tabIndex={0}
       onKeyDown={e => { if (e.key === "Enter") onSelect(hotel) }}
       aria-label={`Se detaljer for ${hotel.name}`}
     >
-      {/* Bilde */}
+      {/* ── Bilde ── */}
+      <div className="relative w-[150px] shrink-0 bg-[var(--sand-light)] overflow-hidden">
+        {hasImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={hotel.image}
+            alt={hotel.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-[var(--muted)] text-xs text-center px-2">Ingen bilde</span>
+          </div>
+        )}
+        {hotel.rating > 0 && (
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent pt-6 pb-2 px-2 flex justify-center">
+            <div className="flex gap-0.5">
+              {Array.from({ length: Math.round(hotel.rating) }).map((_, i) => (
+                <Star key={i} size={8} fill="var(--gold)" stroke="none" />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Hotellinfo (midtre, fleksibel) ── */}
+      <div className="flex-1 min-w-0 px-4 py-3 flex flex-col justify-between">
+        <div>
+          <h3 className="font-semibold text-[14px] leading-snug text-[var(--deep)] line-clamp-2 group-hover:text-[var(--coral)] transition-colors">
+            {hotel.name}
+          </h3>
+
+          {hotel.address && (
+            <div className="flex items-center gap-1 mt-1">
+              <MapPin size={10} className="text-[var(--muted)] shrink-0" />
+              <p className="text-[11px] text-[var(--muted)] truncate">{hotel.address}</p>
+            </div>
+          )}
+
+          {hotel.distance && hotel.distance !== "Se kart" && (
+            <p className="text-[11px] text-[var(--sea)] font-medium mt-0.5">{hotel.distance}</p>
+          )}
+        </div>
+
+        {/* Fasiliteter */}
+        {shownAmenities.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {shownAmenities.map(amenity => {
+              const meta = getAmenityMeta(amenity)
+              return (
+                <span
+                  key={amenity}
+                  className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--deep)]/80 bg-[var(--sand-light)] border border-[var(--border)] px-2 py-0.5 rounded-full"
+                >
+                  {meta.icon && <span className="text-[var(--coral)]">{meta.icon}</span>}
+                  {meta.label}
+                </span>
+              )
+            })}
+            {extraCount > 0 && (
+              <span className="text-[10px] font-medium text-[var(--sea)] bg-[var(--sea-light,#e8f4ff)] px-2 py-0.5 rounded-full border border-[var(--sea)]/20">
+                +{extraCount} til
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Priskolonne (fast bredde) ── */}
+      <div
+        className="w-[148px] shrink-0 flex flex-col items-end justify-between px-4 py-3 bg-[var(--sand-light)]/50 border-l border-[var(--border)]"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="text-right">
+          <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">Fra</p>
+          <p className="font-display text-[22px] leading-none text-[var(--deep)] mt-0.5">
+            {hotel.price.amount.toLocaleString("nb-NO")}
+          </p>
+          <p className="text-[10px] text-[var(--muted)] mt-0.5">
+            {hotel.price.currency} / natt
+          </p>
+          {nights > 1 && hotel.price.totalPrice && (
+            <p className="text-[10px] text-[var(--muted)] mt-0.5 font-medium">
+              {hotel.price.totalPrice.toLocaleString("nb-NO")} kr totalt
+            </p>
+          )}
+        </div>
+
+        <button
+          onClick={() => onSelect(hotel)}
+          className="w-full mt-3 py-2.5 bg-[var(--coral)] hover:bg-[var(--deep)] text-white text-[12px] font-bold rounded-xl transition-all hover:shadow-md"
+        >
+          Vis tilbud
+        </button>
+      </div>
+    </article>
+  )
+}
+
+// ─── Vertikal (mobil / grid) ─────────────────────────────────────────────────
+function VerticalCard({ hotel, onSelect, onHover }: { hotel: RateHawkHotel; onSelect: (h: RateHawkHotel) => void; onHover?: (id: string | null) => void }) {
+  const hasImage = hotel.image && !hotel.image.startsWith("data:image")
+  const nights = hotel.price.nights || 1
+  const shownAmenities = hotel.amenities.slice(0, 5)
+  const extraCount = hotel.amenities.length - shownAmenities.length
+
+  return (
+    <article
+      className="bg-white rounded-2xl overflow-hidden border border-[var(--border)] card-hover cursor-pointer group"
+      onClick={() => onSelect(hotel)}
+      onMouseEnter={() => onHover?.(hotel.id)}
+      onMouseLeave={() => onHover?.(null)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === "Enter") onSelect(hotel) }}
+      aria-label={`Se detaljer for ${hotel.name}`}
+    >
       <div className="relative overflow-hidden bg-[var(--sand-light)] aspect-[16/10]">
         {hasImage ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -52,88 +207,84 @@ export default function HotelCard({ hotel, onSelect }: HotelCardProps) {
           </div>
         )}
 
-        {/* Stjerner overlay */}
         {hotel.rating > 0 && (
-          <div className="absolute top-3 left-3 flex items-center gap-0.5 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
-            {Array.from({ length: Math.round(hotel.rating) }).map((_, i) => (
-              <Star key={i} size={10} fill="var(--gold)" stroke="none" />
-            ))}
+          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
+            <StarRow rating={hotel.rating} />
           </div>
         )}
 
-        {/* Distance */}
-        <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-full">
-          {hotel.distance}
-        </div>
+        {hotel.distance && hotel.distance !== "Se kart" && (
+          <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-full">
+            {hotel.distance}
+          </div>
+        )}
       </div>
 
-      {/* Innhold */}
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-display text-lg text-[var(--deep)] leading-tight line-clamp-2 group-hover:text-[var(--coral)] transition-colors">
-              {hotel.name}
-            </h3>
-            <div className="flex items-center gap-1 mt-1.5">
-              <MapPin size={12} className="text-[var(--muted)] shrink-0" />
-              <p className="text-xs text-[var(--muted)] truncate flex-1">{hotel.address}</p>
-              <a
-                href={`https://maps.google.com/maps?q=${encodeURIComponent(hotel.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="shrink-0 flex items-center gap-0.5 text-[10px] font-medium text-[var(--sea)] hover:text-[var(--deep)] transition-colors"
-                title="Vis i Google Maps"
-              >
-                <ExternalLink size={10} />
-                Kart
-              </a>
-            </div>
-          </div>
+      <div className="p-4">
+        <h3 className="font-display text-base text-[var(--deep)] leading-tight line-clamp-2 group-hover:text-[var(--coral)] transition-colors">
+          {hotel.name}
+        </h3>
 
-          <div className="shrink-0 text-right">
-            <p className="font-display text-2xl text-[var(--deep)]">
-              {hotel.price.amount.toLocaleString("nb-NO")}
-            </p>
-            <p className="text-xs text-[var(--muted)]">{hotel.price.currency}/natt</p>
-            {nights > 1 && (
-              <p className="text-xs text-[var(--muted)] mt-0.5">
-                {hotel.price.totalPrice?.toLocaleString("nb-NO")} tot.
+        {hotel.address && (
+          <div className="flex items-center gap-1 mt-1.5">
+            <MapPin size={11} className="text-[var(--muted)] shrink-0" />
+            <p className="text-xs text-[var(--muted)] truncate">{hotel.address}</p>
+          </div>
+        )}
+
+        {shownAmenities.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {shownAmenities.map(amenity => {
+              const meta = getAmenityMeta(amenity)
+              return (
+                <span
+                  key={amenity}
+                  className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--deep)]/80 bg-[var(--sand-light)] border border-[var(--border)] px-2 py-0.5 rounded-full"
+                >
+                  {meta.icon && <span className="text-[var(--coral)]">{meta.icon}</span>}
+                  {meta.label}
+                </span>
+              )
+            })}
+            {extraCount > 0 && (
+              <span className="text-[10px] font-medium text-[var(--sea)] bg-[var(--sea-light,#e8f4ff)] px-2 py-0.5 rounded-full border border-[var(--sea)]/20">
+                +{extraCount} til
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-end justify-between mt-4 pt-3 border-t border-[var(--border)]">
+          <div>
+            <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">Fra</p>
+            <div className="flex items-baseline gap-1">
+              <span className="font-display text-xl text-[var(--deep)]">
+                {hotel.price.amount.toLocaleString("nb-NO")}
+              </span>
+              <span className="text-xs text-[var(--muted)]">{hotel.price.currency}/natt</span>
+            </div>
+            {nights > 1 && hotel.price.totalPrice && (
+              <p className="text-xs text-[var(--muted)]">
+                {hotel.price.totalPrice.toLocaleString("nb-NO")} kr totalt
               </p>
             )}
           </div>
+          <button
+            onClick={e => { e.stopPropagation(); onSelect(hotel) }}
+            className="bg-[var(--coral)] hover:bg-[var(--deep)] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all"
+          >
+            Vis tilbud
+          </button>
         </div>
-
-        {/* Fasiliteter */}
-        {topAmenities.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-4">
-            {topAmenities.map(amenity => (
-              <span
-                key={amenity}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--deep)]/70 bg-[var(--sand-light)] px-2.5 py-1 rounded-full"
-              >
-                {AMENITY_ICONS[amenity] && (
-                  <span className="text-[var(--coral)]">{AMENITY_ICONS[amenity]}</span>
-                )}
-                {amenity}
-              </span>
-            ))}
-            {hotel.amenities.length > 4 && (
-              <span className="text-[11px] font-medium text-[var(--sea)] bg-[var(--sea-light)] px-2.5 py-1 rounded-full">
-                +{hotel.amenities.length - 4} til
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* CTA */}
-        <button
-          onClick={e => { e.stopPropagation(); onSelect(hotel) }}
-          className="w-full mt-4 py-3 min-h-[44px] bg-[var(--deep)] hover:bg-[var(--coral)] text-white text-sm font-semibold rounded-xl transition-all"
-        >
-          Se tilgjengelige rom
-        </button>
       </div>
     </article>
   )
+}
+
+// ─── Export ──────────────────────────────────────────────────────────────────
+export default function HotelCard({ hotel, onSelect, onHover, variant = "vertical" }: HotelCardProps) {
+  if (variant === "horizontal") {
+    return <HorizontalCard hotel={hotel} onSelect={onSelect} onHover={onHover} />
+  }
+  return <VerticalCard hotel={hotel} onSelect={onSelect} onHover={onHover} />
 }

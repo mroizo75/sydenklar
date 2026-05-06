@@ -351,8 +351,10 @@ class RateHawkClient {
             distanceText = `${staticInfo.facts.beach_distance}m til strand`
           }
 
-          const lat = staticInfo?.latitude ?? staticInfo?.location?.latitude ?? staticInfo?.coordinates?.latitude ?? hotel.latitude ?? hotel.location?.latitude ?? undefined
-          const lng = staticInfo?.longitude ?? staticInfo?.location?.longitude ?? staticInfo?.coordinates?.longitude ?? hotel.longitude ?? hotel.location?.longitude ?? undefined
+          const rawLat = staticInfo?.latitude ?? staticInfo?.location?.latitude ?? staticInfo?.location?.lat ?? staticInfo?.coordinates?.latitude ?? hotel.latitude ?? hotel.location?.latitude ?? hotel.lat
+          const rawLng = staticInfo?.longitude ?? staticInfo?.location?.longitude ?? staticInfo?.location?.lon ?? staticInfo?.coordinates?.longitude ?? hotel.longitude ?? hotel.location?.longitude ?? hotel.lng ?? hotel.lon
+          const lat = rawLat !== undefined && rawLat !== null ? parseFloat(String(rawLat)) : undefined
+          const lng = rawLng !== undefined && rawLng !== null ? parseFloat(String(rawLng)) : undefined
 
           return {
             id: hotelId?.toString() || '',
@@ -370,8 +372,8 @@ class RateHawkClient {
             images: this.parseAllImages(staticInfo?.images),
             amenities: allAmenities,
             distance: distanceText,
-            lat: typeof lat === 'number' ? lat : undefined,
-            lng: typeof lng === 'number' ? lng : undefined,
+            lat: lat !== undefined && !isNaN(lat) ? lat : undefined,
+            lng: lng !== undefined && !isNaN(lng) ? lng : undefined,
           }
         })
 
@@ -485,8 +487,10 @@ class RateHawkClient {
         if (d > 0) distanceText = d < 1 ? `${Math.round(d * 1000)}m fra sentrum` : `${d.toFixed(1)}km fra sentrum`
       }
 
-      const lat = staticInfo?.latitude ?? staticInfo?.location?.latitude ?? staticInfo?.coordinates?.latitude ?? hotel.latitude ?? hotel.location?.latitude ?? undefined
-      const lng = staticInfo?.longitude ?? staticInfo?.location?.longitude ?? staticInfo?.coordinates?.longitude ?? hotel.longitude ?? hotel.location?.longitude ?? undefined
+      const rawLat2 = staticInfo?.latitude ?? staticInfo?.location?.latitude ?? staticInfo?.location?.lat ?? staticInfo?.coordinates?.latitude ?? hotel.latitude ?? hotel.location?.latitude ?? hotel.lat
+      const rawLng2 = staticInfo?.longitude ?? staticInfo?.location?.longitude ?? staticInfo?.location?.lon ?? staticInfo?.coordinates?.longitude ?? hotel.longitude ?? hotel.location?.longitude ?? hotel.lng ?? hotel.lon
+      const lat2 = rawLat2 !== undefined && rawLat2 !== null ? parseFloat(String(rawLat2)) : undefined
+      const lng2 = rawLng2 !== undefined && rawLng2 !== null ? parseFloat(String(rawLng2)) : undefined
 
       return {
         id: hotelId?.toString() || '',
@@ -498,8 +502,8 @@ class RateHawkClient {
         images: this.parseAllImages(staticInfo?.images),
         amenities: allAmenities,
         distance: distanceText,
-        lat: typeof lat === 'number' ? lat : undefined,
-        lng: typeof lng === 'number' ? lng : undefined,
+        lat: lat2 !== undefined && !isNaN(lat2) ? lat2 : undefined,
+        lng: lng2 !== undefined && !isNaN(lng2) ? lng2 : undefined,
       }
     })
 
@@ -543,8 +547,12 @@ class RateHawkClient {
       if (!record && hotelId) record = getHotelById(hotelId)
       if (record && record.room_groups !== undefined) {
         const result = recordToApiFormat(record)
-        this.hotelInfoCache.set(cacheKey, result)
-        return result
+        // Returner kun fra SQLite-cache hvis koordinater finnes.
+        // Ellers fall gjennom til API-kall for å hente oppdatert data med koordinater.
+        if (result.latitude !== undefined && !isNaN(parseFloat(String(result.latitude)))) {
+          this.hotelInfoCache.set(cacheKey, result)
+          return result
+        }
       }
     } catch (dbError: any) {
       console.warn('SQLite lookup failed:', dbError.message)

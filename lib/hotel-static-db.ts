@@ -99,6 +99,15 @@ export function rawApiToRecord(raw: any): HotelStaticRecord | null {
     }
   }
 
+  // Koordinater kan ligge på toppnivå eller i location/coordinates – samle alt i location-objektet
+  // slik at de overlever DB-lagring og round-trip gjennom recordToApiFormat.
+  const apiLat = raw.latitude ?? raw.location?.latitude ?? raw.coordinates?.latitude ?? raw.lat
+  const apiLng = raw.longitude ?? raw.location?.longitude ?? raw.coordinates?.longitude ?? raw.lng ?? raw.lon
+  const baseLocation: Record<string, any> = raw.location && typeof raw.location === 'object' ? { ...raw.location } : {}
+  if (apiLat !== undefined) baseLocation.latitude = typeof apiLat === 'number' ? apiLat : parseFloat(String(apiLat))
+  if (apiLng !== undefined) baseLocation.longitude = typeof apiLng === 'number' ? apiLng : parseFloat(String(apiLng))
+  const locationData = Object.keys(baseLocation).length > 0 ? baseLocation : undefined
+
   return {
     id: raw.id,
     hid: raw.hid ?? undefined,
@@ -114,7 +123,7 @@ export function rawApiToRecord(raw: any): HotelStaticRecord | null {
     amenity_groups: raw.amenity_groups ?? undefined,
     amenities: raw.amenities ?? undefined,
     facts: raw.facts ?? undefined,
-    location: raw.location ?? undefined,
+    location: locationData,
     description: raw.description ?? undefined,
     check_in_time: raw.check_in_time ?? undefined,
     check_out_time: raw.check_out_time ?? undefined,
@@ -125,6 +134,7 @@ export function rawApiToRecord(raw: any): HotelStaticRecord | null {
 }
 
 export function recordToApiFormat(r: HotelStaticRecord): Record<string, any> {
+  const loc = r.location ?? {}
   return {
     id: r.id,
     hid: r.hid,
@@ -137,12 +147,15 @@ export function recordToApiFormat(r: HotelStaticRecord): Record<string, any> {
     },
     country: r.country_name ? { name: r.country_name } : undefined,
     star_rating: r.star_rating ?? 0,
+    // Koordinater eksponert på toppnivå slik at ratehawk-client.ts finner dem
+    latitude: loc.latitude,
+    longitude: loc.longitude,
     images: r.images ?? [],
     room_groups: r.room_groups ?? [],
     amenity_groups: r.amenity_groups ?? [],
     amenities: r.amenities ?? [],
     facts: r.facts ?? {},
-    location: r.location ?? {},
+    location: loc,
     description: r.description,
     check_in_time: r.check_in_time,
     check_out_time: r.check_out_time,

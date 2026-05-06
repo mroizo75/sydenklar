@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import NewsletterSection from '@/components/NewsletterSection'
 import { getCitiesByCountry, getHotelCount } from '@/lib/hotel-static-db'
 import { generateDestinationMetadata, buildBreadcrumbSchema, SITE_URL } from '@/lib/seo'
 import type { Metadata } from 'next'
@@ -164,6 +165,7 @@ export default function NorgePage() {
         </div>
       </div>
 
+      <NewsletterSection />
       <Footer />
 
       <script

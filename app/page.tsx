@@ -6,6 +6,7 @@ import DestinationsSection from "@/components/DestinationsSection";
 import WhySection from "@/components/WhySection";
 import HotelTypesSection from "@/components/HotelTypesSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import NewsletterSection from "@/components/NewsletterSection";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function HomePage() {
       <WhySection />
       <HotelTypesSection />
       <TestimonialsSection />
+      <NewsletterSection />
       <Footer />
     </main>
   );

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Star, MapPin, ChevronLeft, ChevronRight, Clock, Wifi, Car, Waves, Dumbbell, UtensilsCrossed, Check } from "lucide-react"
+import { X, Star, MapPin, ChevronLeft, ChevronRight, Clock, Wifi, Car, Waves, Dumbbell, UtensilsCrossed, Check, Images } from "lucide-react"
 
 interface TaxEntry {
   name: string
@@ -55,9 +55,90 @@ interface HotelDetailModalProps {
     children: number[]
     roomConfigs?: any[]
     currency?: string
+    residency?: string
   }
   onClose: () => void
   onBook: (room: Room, hotel: HotelDetail) => void
+}
+
+// Mini-bildegalleri per rom
+function RoomImageGallery({ images, roomName }: { images: string[]; roomName: string }) {
+  const [idx, setIdx] = useState(0)
+  const [lightbox, setLightbox] = useState(false)
+  const total = images.length
+  if (total === 0) return null
+
+  const prev = (e: React.MouseEvent) => { e.stopPropagation(); setIdx(i => (i - 1 + total) % total) }
+  const next = (e: React.MouseEvent) => { e.stopPropagation(); setIdx(i => (i + 1) % total) }
+
+  return (
+    <>
+      <div className="relative sm:w-52 shrink-0 bg-[var(--sand-light)] overflow-hidden" style={{ minHeight: 130 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={images[idx]}
+          alt={`${roomName} – bilde ${idx + 1}`}
+          className="w-full h-full object-cover cursor-pointer"
+          style={{ minHeight: 130, maxHeight: 180 }}
+          loading="lazy"
+          onClick={() => setLightbox(true)}
+        />
+        {total > 1 && (
+          <>
+            <button onClick={prev} className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition-colors">
+              <ChevronLeft size={14} />
+            </button>
+            <button onClick={next} className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition-colors">
+              <ChevronRight size={14} />
+            </button>
+            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/50 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
+              <Images size={9} />
+              {idx + 1}/{total}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[120] bg-black/95 flex items-center justify-center"
+          onClick={() => setLightbox(false)}
+        >
+          <button onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + total) % total) }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+            <ChevronLeft size={24} />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={images[idx]} alt={roomName} className="max-w-[90vw] max-h-[85vh] object-contain" onClick={e => e.stopPropagation()} />
+          <button onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % total) }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+            <ChevronRight size={24} />
+          </button>
+          <button onClick={() => setLightbox(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+            <X size={20} />
+          </button>
+          <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/60 text-sm">{idx + 1} / {total}</p>
+
+          {/* Thumbnails */}
+          {total > 1 && (
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-1.5 max-w-[80vw] overflow-x-auto py-1 px-2">
+              {images.map((src, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={i}
+                  src={src}
+                  alt=""
+                  onClick={e => { e.stopPropagation(); setIdx(i) }}
+                  className={`w-12 h-9 object-cover rounded cursor-pointer shrink-0 transition-all ${i === idx ? "ring-2 ring-white opacity-100" : "opacity-50 hover:opacity-80"}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
 }
 
 export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams, onClose, onBook }: HotelDetailModalProps) {
@@ -85,7 +166,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
             children: searchParams.children,
             roomConfigs: searchParams.roomConfigs,
             currency: searchParams.currency || "NOK",
-            residency: "no",
+            residency: searchParams.residency || "no",
           }),
         })
         const data = await res.json()
@@ -378,17 +459,9 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                         return (
                           <div key={idx} className="rounded-2xl border border-[var(--border)] overflow-hidden bg-white group hover:border-[var(--coral)]/40 transition-colors">
                             <div className="flex flex-col sm:flex-row">
-                              {/* Rombilde */}
+                              {/* Rombilder – galleri med alle bilder */}
                               {hasRoomImages && (
-                                <div className="sm:w-48 aspect-[4/3] sm:aspect-auto bg-[var(--sand-light)] shrink-0 overflow-hidden">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={room.images[0]}
-                                    alt={room.room_name}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                  />
-                                </div>
+                                <RoomImageGallery images={room.images} roomName={room.room_name} />
                               )}
 
                               <div className="flex-1 p-4 flex flex-col gap-3">

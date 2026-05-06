@@ -1,4 +1,5 @@
 import Image from "next/image"
+import NewsletterSignup from "@/components/NewsletterSignup"
 
 const footerLinks = {
   Søk: [
@@ -6,6 +7,7 @@ const footerLinks = {
     { label: "Destinasjoner", href: "/destinasjoner" },
     { label: "Tilbud", href: "/tilbud" },
     { label: "Pakkereiser", href: "/pakkereiser" },
+    { label: "Reisetips", href: "/reisetips" },
   ],
   Selskap: [
     { label: "Om oss", href: "/om-oss" },
@@ -85,6 +87,21 @@ export default function Footer() {
               </ul>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Newsletter bar */}
+      <div className="border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-10">
+            <div className="shrink-0">
+              <p className="text-white/90 text-sm font-semibold mb-1">Ukentlig reiseinspirasjon</p>
+              <p className="text-white/40 text-xs max-w-xs">Hoteller og destinasjoner rett i innboksen — gratis.</p>
+            </div>
+            <div className="flex-1 w-full max-w-md">
+              <NewsletterSignup variant="dark" />
+            </div>
+          </div>
         </div>
       </div>
 

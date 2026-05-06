@@ -143,3 +143,68 @@ a, button {
 .animated-link:hover::after {
   width: 100%;
 }
+
+/* Prose styles for legal/content pages */
+.prose-sydenklar h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--deep);
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+.prose-sydenklar h3 {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--deep);
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+.prose-sydenklar p {
+  color: #4A4F5A;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  margin-bottom: 1rem;
+}
+.prose-sydenklar ul, .prose-sydenklar ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.prose-sydenklar li {
+  color: #4A4F5A;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  margin-bottom: 0.35rem;
+}
+.prose-sydenklar a {
+  color: var(--sea);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-sydenklar a:hover {
+  color: var(--deep);
+}
+.prose-sydenklar strong {
+  color: var(--deep);
+  font-weight: 600;
+}
+.prose-sydenklar hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+.prose-sydenklar .info-box {
+  background: var(--sea-light);
+  border-left: 3px solid var(--sea);
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+}
+.prose-sydenklar .warning-box {
+  background: #FFF7ED;
+  border-left: 3px solid #F59E0B;
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+}

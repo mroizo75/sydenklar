@@ -34,7 +34,7 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
   const [checkIn, setCheckIn] = useState(initialValues?.checkIn || "")
   const [checkOut, setCheckOut] = useState(initialValues?.checkOut || "")
   const [roomConfigs, setRoomConfigs] = useState<RoomConfig[]>(initialValues?.roomConfigs || [{ adults: 2, childAges: [] }])
-  const residency = "no"
+  const [residency, setResidency] = useState(initialValues?.residency || "no")
   const [suggestions, setSuggestions] = useState<RateHawkDestination[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showGuestPicker, setShowGuestPicker] = useState(false)
@@ -173,11 +173,10 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
     // Fallback: ren numerisk input uten dropdown-valg → behandles som hotell-hid
     const rawId = destination.trim()
     const isRawHotelId = /^\d{5,}$/.test(rawId) && !destinationId
-    const resolvedDestination = destinationId || rawId
     const resolvedType = destinationType || (isRawHotelId ? "hotel" : "")
 
     onSearch({
-      destination: resolvedDestination,
+      destination,                                          // lesbart stedsnavn, aldri ID
       destinationId: destinationId || (isRawHotelId ? rawId : ""),
       destinationType: resolvedType,
       checkIn,
@@ -397,6 +396,122 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
               </button>
             </div>
           )}
+        </div>
+
+        <div className="w-px bg-[var(--border)] hidden lg:block self-stretch my-2" />
+
+        {/* Nasjonalitet – kompakt fast bredde */}
+        <div className="shrink-0 w-[130px] hidden lg:block">
+          <label className="block px-3 pt-3 pb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Pass</span>
+          </label>
+          <div className="flex items-center gap-1.5 px-3 pb-3">
+            <Globe size={13} className="text-[var(--muted)] shrink-0" />
+            <select
+              value={residency}
+              onChange={e => setResidency(e.target.value)}
+              className="w-full text-[var(--deep)] text-sm font-medium bg-transparent outline-none cursor-pointer truncate"
+            >
+              <option value="no">Norge</option>
+              <option value="se">Sverige</option>
+              <option value="dk">Danmark</option>
+              <option value="fi">Finland</option>
+              <option value="is">Island</option>
+              <option value="gb">Storbritannia</option>
+              <option value="de">Tyskland</option>
+              <option value="fr">Frankrike</option>
+              <option value="es">Spania</option>
+              <option value="it">Italia</option>
+              <option value="nl">Nederland</option>
+              <option value="be">Belgia</option>
+              <option value="at">Østerrike</option>
+              <option value="ch">Sveits</option>
+              <option value="pl">Polen</option>
+              <option value="pt">Portugal</option>
+              <option value="gr">Hellas</option>
+              <option value="cz">Tsjekkia</option>
+              <option value="hu">Ungarn</option>
+              <option value="ro">Romania</option>
+              <option value="tr">Tyrkia</option>
+              <option value="ua">Ukraina</option>
+              <option value="ru">Russland</option>
+              <option value="us">USA</option>
+              <option value="ca">Canada</option>
+              <option value="au">Australia</option>
+              <option value="nz">New Zealand</option>
+              <option value="jp">Japan</option>
+              <option value="cn">Kina</option>
+              <option value="in">India</option>
+              <option value="th">Thailand</option>
+              <option value="sg">Singapore</option>
+              <option value="ae">UAE</option>
+              <option value="za">Sør-Afrika</option>
+              <option value="br">Brasil</option>
+              <option value="mx">Mexico</option>
+              <option value="ar">Argentina</option>
+              <option value="il">Israel</option>
+              <option value="kr">Sør-Korea</option>
+              <option value="eg">Egypt</option>
+              <option value="ma">Marokko</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Nasjonalitet – mobil (vises som separat rad) */}
+        <div className="lg:hidden">
+          <label className="block px-4 pt-3 pb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Nasjonalitet (pass)</span>
+          </label>
+          <div className="flex items-center gap-2 px-4 pb-3">
+            <Globe size={15} className="text-[var(--muted)] shrink-0" />
+            <select
+              value={residency}
+              onChange={e => setResidency(e.target.value)}
+              className="w-full text-[var(--deep)] text-sm font-medium bg-transparent outline-none cursor-pointer"
+            >
+              <option value="no">Norge</option>
+              <option value="se">Sverige</option>
+              <option value="dk">Danmark</option>
+              <option value="fi">Finland</option>
+              <option value="is">Island</option>
+              <option value="gb">Storbritannia</option>
+              <option value="de">Tyskland</option>
+              <option value="fr">Frankrike</option>
+              <option value="es">Spania</option>
+              <option value="it">Italia</option>
+              <option value="nl">Nederland</option>
+              <option value="be">Belgia</option>
+              <option value="at">Østerrike</option>
+              <option value="ch">Sveits</option>
+              <option value="pl">Polen</option>
+              <option value="pt">Portugal</option>
+              <option value="gr">Hellas</option>
+              <option value="cz">Tsjekkia</option>
+              <option value="hu">Ungarn</option>
+              <option value="ro">Romania</option>
+              <option value="tr">Tyrkia</option>
+              <option value="ua">Ukraina</option>
+              <option value="ru">Russland</option>
+              <option value="us">USA</option>
+              <option value="ca">Canada</option>
+              <option value="au">Australia</option>
+              <option value="nz">New Zealand</option>
+              <option value="jp">Japan</option>
+              <option value="cn">Kina</option>
+              <option value="in">India</option>
+              <option value="th">Thailand</option>
+              <option value="sg">Singapore</option>
+              <option value="ae">UAE</option>
+              <option value="za">Sør-Afrika</option>
+              <option value="br">Brasil</option>
+              <option value="mx">Mexico</option>
+              <option value="ar">Argentina</option>
+              <option value="il">Israel</option>
+              <option value="kr">Sør-Korea</option>
+              <option value="eg">Egypt</option>
+              <option value="ma">Marokko</option>
+            </select>
+          </div>
         </div>
 
         {/* Søk-knapp */}

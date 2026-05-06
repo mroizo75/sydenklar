@@ -202,45 +202,52 @@ function HotellPageContent() {
               checkIn: searchState.checkIn,
               checkOut: searchState.checkOut,
               roomConfigs: searchState.roomConfigs,
+              residency: searchState.residency,
             } : undefined}
           />
         </div>
       </div>
 
       {/* Results area */}
-      <div className="flex-1 bg-[var(--sand-light)] py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {!hasSearched && !loading && (
-            <div className="text-center py-20">
-              <div className="text-5xl mb-6">🏨</div>
-              <h2 className="font-display text-3xl text-[var(--deep)] mb-3">
-                Finn ditt perfekte hotell
-              </h2>
-              <p className="text-[var(--muted)] max-w-md mx-auto">
-                Bruk søkefeltet over til å finne ledige rom basert på destinasjon, datoer og antall gjester.
-              </p>
-            </div>
-          )}
-
-          {loading && (
-            <div className="text-center py-20">
-              <div className="inline-flex flex-col items-center gap-4">
-                <div className="w-14 h-14 rounded-full border-4 border-[var(--sand)] border-t-[var(--coral)] animate-spin" />
-                <p className="font-display text-2xl text-[var(--deep)]">Søker etter hoteller...</p>
-                <p className="text-[var(--muted)] text-sm">Henter priser fra over 2 millioner hoteller</p>
+      <div className="flex-1 bg-[var(--sand-light)]">
+        {/* Ikke-resultat-tilstander: sentrert med max-bredde */}
+        {(!results || loading || error) && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {!hasSearched && !loading && (
+              <div className="text-center py-20">
+                <div className="text-5xl mb-6">🏨</div>
+                <h2 className="font-display text-3xl text-[var(--deep)] mb-3">
+                  Finn ditt perfekte hotell
+                </h2>
+                <p className="text-[var(--muted)] max-w-md mx-auto">
+                  Bruk søkefeltet over til å finne ledige rom basert på destinasjon, datoer og antall gjester.
+                </p>
               </div>
-            </div>
-          )}
+            )}
 
-          {error && !loading && (
-            <div className="max-w-lg mx-auto mt-12 bg-white rounded-2xl border border-red-100 p-8 text-center shadow-sm">
-              <div className="text-4xl mb-4">😕</div>
-              <h3 className="font-semibold text-[var(--deep)] mb-2">Ingen resultater</h3>
-              <p className="text-sm text-[var(--muted)]">{error}</p>
-            </div>
-          )}
+            {loading && (
+              <div className="text-center py-20">
+                <div className="inline-flex flex-col items-center gap-4">
+                  <div className="w-14 h-14 rounded-full border-4 border-[var(--sand)] border-t-[var(--coral)] animate-spin" />
+                  <p className="font-display text-2xl text-[var(--deep)]">Søker etter hoteller...</p>
+                  <p className="text-[var(--muted)] text-sm">Henter priser fra over 2 millioner hoteller</p>
+                </div>
+              </div>
+            )}
 
-          {results && !loading && searchState && (
+            {error && !loading && (
+              <div className="max-w-lg mx-auto mt-12 bg-white rounded-2xl border border-red-100 p-8 text-center shadow-sm">
+                <div className="text-4xl mb-4">😕</div>
+                <h3 className="font-semibold text-[var(--deep)] mb-2">Ingen resultater</h3>
+                <p className="text-sm text-[var(--muted)]">{error}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Resultater: split-screen, HotelResults håndterer eget layout */}
+        {results && !loading && searchState && results.hotels.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <HotelResults
               hotels={results.hotels}
               totalResults={results.totalResults}
@@ -261,16 +268,18 @@ function HotellPageContent() {
                 } : prev)
               }}
             />
-          )}
+          </div>
+        )}
 
-          {results && results.hotels.length === 0 && !loading && !error && (
+        {results && results.hotels.length === 0 && !loading && !error && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center py-20">
               <div className="text-5xl mb-4">🔍</div>
               <h3 className="font-display text-2xl text-[var(--deep)] mb-2">Ingen hoteller funnet</h3>
               <p className="text-[var(--muted)]">Prøv å endre destinasjon eller datoer.</p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <Footer />
@@ -288,6 +297,7 @@ function HotellPageContent() {
             children: allChildren,
             roomConfigs: searchState.roomConfigs,
             currency: "NOK",
+            residency: searchState.residency,
           }}
           onClose={() => setSelectedHotel(null)}
           onBook={(room, hotelDetail) => {

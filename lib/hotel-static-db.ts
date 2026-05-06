@@ -324,3 +324,191 @@ export function getLastSync(): { type: string; ended_at: number; inserted: numbe
     return null
   }
 }
+
+export function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/æ/g, 'ae')
+    .replace(/ø/g, 'o')
+    .replace(/å/g, 'a')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+export interface DestinationCountry {
+  country_name: string
+  slug: string
+  count: number
+}
+
+export interface DestinationCity {
+  city_name: string
+  slug: string
+  count: number
+}
+
+export function getCountriesWithCounts(): DestinationCountry[] {
+  try {
+    const rows = getDb()
+      .prepare(
+        `SELECT country_name, COUNT(*) as count
+         FROM hotels
+         WHERE country_name IS NOT NULL AND country_name != ''
+         GROUP BY country_name
+         ORDER BY count DESC`
+      )
+      .all() as { country_name: string; count: number }[]
+    return rows.map(r => ({ country_name: r.country_name, slug: slugify(r.country_name), count: r.count }))
+  } catch {
+    return []
+  }
+}
+
+export function getCitiesByCountry(countryName: string): DestinationCity[] {
+  try {
+    const rows = getDb()
+      .prepare(
+        `SELECT city_name, COUNT(*) as count
+         FROM hotels
+         WHERE country_name = ? AND city_name IS NOT NULL AND city_name != ''
+         GROUP BY city_name
+         ORDER BY count DESC`
+      )
+      .all(countryName) as { city_name: string; count: number }[]
+    return rows.map(r => ({ city_name: r.city_name, slug: slugify(r.city_name), count: r.count }))
+  } catch {
+    return []
+  }
+}
+
+export function getHotelsByCity(
+  countryName: string,
+  cityName: string,
+  limit = 24,
+  offset = 0
+): HotelStaticRecord[] {
+  try {
+    const rows = getDb()
+      .prepare(
+        `SELECT * FROM hotels
+         WHERE country_name = ? AND city_name = ?
+         ORDER BY star_rating DESC
+         LIMIT ? OFFSET ?`
+      )
+      .all(countryName, cityName, limit, offset) as any[]
+    return rows.map(deserializeRow)
+  } catch {
+    return []
+  }
+}
+
+export function getHotelCountByCity(countryName: string, cityName: string): number {
+  try {
+    const row = getDb()
+      .prepare(`SELECT COUNT(*) as count FROM hotels WHERE country_name = ? AND city_name = ?`)
+      .get(countryName, cityName) as any
+    return row?.count ?? 0
+  } catch {
+    return 0
+  }
+}
+
+export function findCountryBySlug(slug: string): string | null {
+  try {
+    const rows = getDb()
+      .prepare(`SELECT DISTINCT country_name FROM hotels WHERE country_name IS NOT NULL`)
+      .all() as { country_name: string }[]
+    return rows.find(r => slugify(r.country_name) === slug)?.country_name ?? null
+  } catch {
+    return null
+  }
+}
+
+export function findCityBySlug(countryName: string, citySlug: string): string | null {
+  try {
+    const rows = getDb()
+      .prepare(`SELECT DISTINCT city_name FROM hotels WHERE country_name = ? AND city_name IS NOT NULL`)
+      .all(countryName) as { city_name: string }[]
+    return rows.find(r => slugify(r.city_name) === citySlug)?.city_name ?? null
+  } catch {
+    return null
+  }
+}
+
+export function getHotelByIdSlug(id: string): HotelStaticRecord | null {
+  return getHotelById(id)
+}
+
+export interface SitemapEntry {
+  country_name: string
+  city_name: string
+  id: string
+  name: string
+  updated_at: number
+}
+
+export function getSitemapEntries(limit = 50000): SitemapEntry[] {
+  try {
+    return getDb()
+      .prepare(
+        `SELECT country_name, city_name, id, name, updated_at
+         FROM hotels
+         WHERE country_name IS NOT NULL AND city_name IS NOT NULL
+           AND country_name != '' AND city_name != ''
+         ORDER BY star_rating DESC
+         LIMIT ?`
+      )
+      .all(limit) as SitemapEntry[]
+  } catch {
+    return []
+  }
+}
+
+export function getTopCitiesByCountry(limit = 20): { country_name: string; city_name: string; count: number }[] {
+  try {
+    return getDb()
+      .prepare(
+        `SELECT country_name, city_name, COUNT(*) as count
+         FROM hotels
+         WHERE country_name IS NOT NULL AND city_name IS NOT NULL
+           AND country_name != '' AND city_name != ''
+         GROUP BY country_name, city_name
+         ORDER BY count DESC
+         LIMIT ?`
+      )
+      .all(limit) as any[]
+  } catch {
+    return []
+  }
+}
+
+export interface HotelFeedRecord {
+  id: string
+  hid: number | null
+  name: string
+  address: string | null
+  city_name: string | null
+  region_name: string | null
+  country_name: string | null
+  star_rating: number
+  first_image: string | null
+  location: string | null
+}
+
+export function getAllHotelsForFeed(): HotelFeedRecord[] {
+  try {
+    return getDb()
+      .prepare(
+        `SELECT id, hid, name, address, city_name, region_name, country_name,
+                star_rating, first_image, location
+         FROM hotels
+         WHERE name IS NOT NULL AND name != ''
+         ORDER BY star_rating DESC`
+      )
+      .all() as HotelFeedRecord[]
+  } catch {
+    return []
+  }
+}

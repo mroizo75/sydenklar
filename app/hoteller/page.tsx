@@ -179,7 +179,7 @@ function HotellPageContent() {
       <Header />
 
       {/* Search header */}
-      <div className="bg-[var(--deep)] pt-20 pb-8">
+      <div className={`bg-[var(--deep)] pt-20 ${hasSearched ? "pb-4" : "pb-8"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {!hasSearched && (
             <div className="py-8 text-center">

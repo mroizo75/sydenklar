@@ -23,46 +23,46 @@ interface Deal {
 const DEALS: Deal[] = [
   {
     id: '1',
-    hotelName: 'Hotel Arts Barcelona',
-    destination: 'Barcelona',
+    hotelName: 'Lopesan Costa Meloneras Resort',
+    destination: 'Gran Canaria',
     country: 'Spania',
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80',
     stars: 5,
-    pricePerNight: 1490,
-    originalPrice: 2390,
+    pricePerNight: 1390,
+    originalPrice: 2190,
     currency: 'NOK',
-    amenities: ['Basseng', 'Gratis WiFi', 'Restaurant'],
-    destinationId: 'barcelona',
-    destinationType: 'city',
-    badge: 'Bestseller',
+    amenities: ['All inclusive', 'Basseng', 'Gratis WiFi'],
+    destinationId: 'gran-canaria',
+    destinationType: 'island',
+    badge: 'Nordmenns favoritt',
   },
   {
     id: '2',
-    hotelName: 'NH Collection Roma Fori Imperiali',
-    destination: 'Roma',
-    country: 'Italia',
-    image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80',
-    stars: 4,
-    pricePerNight: 1190,
-    originalPrice: 1750,
-    currency: 'NOK',
-    amenities: ['Gratis WiFi', 'Restaurant', 'Frokost inkl.'],
-    destinationId: 'rome',
-    destinationType: 'city',
-    badge: 'Siste ledige rom',
-  },
-  {
-    id: '3',
-    hotelName: 'Canaves Oia Boutique Hotel',
-    destination: 'Santorini',
+    hotelName: 'Aldemar Knossos Royal',
+    destination: 'Kreta',
     country: 'Hellas',
     image: 'https://images.unsplash.com/photo-1602343168117-bb8ffe3e2e9f?w=800&q=80',
     stars: 5,
-    pricePerNight: 2890,
-    originalPrice: 3990,
+    pricePerNight: 1690,
+    originalPrice: 2490,
     currency: 'NOK',
-    amenities: ['Basseng', 'Havutsikt', 'Gratis WiFi'],
-    destinationId: 'santorini',
+    amenities: ['All inclusive', 'Basseng', 'Strandlinje'],
+    destinationId: 'crete',
+    destinationType: 'island',
+    badge: 'Bestseller',
+  },
+  {
+    id: '3',
+    hotelName: 'Iberostar Grand Salomé',
+    destination: 'Tenerife',
+    country: 'Spania',
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+    stars: 5,
+    pricePerNight: 1890,
+    originalPrice: 2690,
+    currency: 'NOK',
+    amenities: ['All inclusive', 'Basseng', 'Gratis WiFi'],
+    destinationId: 'tenerife',
     destinationType: 'island',
   },
   {
@@ -82,31 +82,32 @@ const DEALS: Deal[] = [
   },
   {
     id: '5',
-    hotelName: 'Iberostar Grand Salomé',
-    destination: 'Tenerife',
-    country: 'Spania',
-    image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80',
+    hotelName: 'The Bvlgari Resort Bali',
+    destination: 'Bali',
+    country: 'Indonesia',
+    image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80',
     stars: 5,
-    pricePerNight: 1890,
-    originalPrice: 2690,
+    pricePerNight: 2490,
+    originalPrice: 3590,
     currency: 'NOK',
-    amenities: ['All inclusive', 'Basseng', 'Gratis WiFi'],
-    destinationId: 'tenerife',
+    amenities: ['Basseng', 'Havutsikt', 'Gratis WiFi'],
+    destinationId: 'bali',
     destinationType: 'island',
+    badge: 'Eksotisk drøm',
   },
   {
     id: '6',
-    hotelName: 'Hotel Brummell',
-    destination: 'Mallorca',
-    country: 'Spania',
-    image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80',
+    hotelName: 'Thon Hotel Opera',
+    destination: 'Oslo',
+    country: 'Norge',
+    image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80',
     stars: 4,
-    pricePerNight: 1290,
-    originalPrice: 1890,
+    pricePerNight: 1090,
+    originalPrice: 1590,
     currency: 'NOK',
-    amenities: ['Basseng', 'Gratis WiFi', 'Parkering'],
-    destinationId: 'mallorca',
-    destinationType: 'island',
+    amenities: ['Gratis WiFi', 'Restaurant', 'Frokost inkl.'],
+    destinationId: 'oslo',
+    destinationType: 'city',
   },
 ]
 
@@ -132,10 +133,9 @@ function getNextWeekendDates(): { checkIn: string; checkOut: string } {
 }
 
 function buildHotellUrl(deal: Deal, checkIn: string, checkOut: string): string {
+  // Sender bare destinasjonsnavn — hoteller-siden slår opp riktig RateHawk-ID via autocomplete
   const params = new URLSearchParams({
     destinasjon: deal.destination,
-    destinationId: deal.destinationId,
-    destinationType: deal.destinationType,
     checkIn,
     checkOut,
     adults: '2',
@@ -246,8 +246,14 @@ export default function BestDealsSection() {
   useEffect(() => {
     const { checkIn, checkOut } = getNextWeekendDates()
     setDates({ checkIn, checkOut })
-    const d = new Date(checkIn)
-    setFormattedDate(d.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' }))
+    // Parse as local dates to avoid UTC midnight shift
+    const [inY, inM, inD] = checkIn.split('-').map(Number)
+    const [outY, outM, outD] = checkOut.split('-').map(Number)
+    const dIn = new Date(inY, inM - 1, inD)
+    const dOut = new Date(outY, outM - 1, outD)
+    const inStr = dIn.toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric', month: 'long' })
+    const outStr = dOut.toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric', month: 'long' })
+    setFormattedDate(`${inStr} – ${outStr}`)
   }, [])
 
   const sync = () => {
@@ -288,7 +294,7 @@ export default function BestDealsSection() {
             </h2>
             {formattedDate && (
               <p className="text-sm text-[var(--muted)] mt-2">
-                Priser for neste helg · Innsjekk {formattedDate} · 2 netter · 2 gjester
+                Neste helg · {formattedDate} · 2 gjester
               </p>
             )}
           </div>

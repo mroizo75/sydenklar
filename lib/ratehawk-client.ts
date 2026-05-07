@@ -1,4 +1,5 @@
 import { RateHawkHotelSearchParams, RateHawkHotelSearchResponse } from '@/lib/types'
+import { BOOKING_FEE_PERCENT } from '@/lib/pricing'
 import {
   getHotelById,
   getHotelByHid,
@@ -252,7 +253,6 @@ class RateHawkClient {
             currency = cheapestRate.payment_options?.payment_types?.[0]?.currency_code || 'NOK'
           }
 
-          const BOOKING_FEE_PERCENT = 7
           const totalPriceWithFee = totalPrice * (1 + BOOKING_FEE_PERCENT / 100)
           const pricePerNight = nights > 0 ? totalPriceWithFee / nights : totalPriceWithFee
 
@@ -356,6 +356,18 @@ class RateHawkClient {
           const lat = rawLat !== undefined && rawLat !== null ? parseFloat(String(rawLat)) : undefined
           const lng = rawLng !== undefined && rawLng !== null ? parseFloat(String(rawLng)) : undefined
 
+          const cheapestPenalties = hotel.rates?.[0]?.cancellation_penalties
+          const freeCancellationBefore: string | null = cheapestPenalties?.free_cancellation_before ?? null
+          const freeCancellation: boolean = (() => {
+            if (freeCancellationBefore) return true
+            const policies = cheapestPenalties?.policies
+            if (!policies || !Array.isArray(policies)) return false
+            const hasFreePeriod = policies.some((p: any) =>
+              p.amount_charge === '0' || p.amount_charge === 0
+            )
+            return hasFreePeriod
+          })()
+
           return {
             id: hotelId?.toString() || '',
             name: hotelName,
@@ -374,6 +386,8 @@ class RateHawkClient {
             distance: distanceText,
             lat: lat !== undefined && !isNaN(lat) ? lat : undefined,
             lng: lng !== undefined && !isNaN(lng) ? lng : undefined,
+            freeCancellation,
+            freeCancellationBefore,
           }
         })
 
@@ -429,8 +443,6 @@ class RateHawkClient {
     const checkInDate = new Date(params.checkIn)
     const checkOutDate = new Date(params.checkOut)
     const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-    const BOOKING_FEE_PERCENT = 7
-
     const tasks = batch.map((hotel: any) => async () => {
       let totalPrice = 0
       let currency = 'NOK'
@@ -547,9 +559,11 @@ class RateHawkClient {
       if (!record && hotelId) record = getHotelById(hotelId)
       if (record && record.room_groups !== undefined) {
         const result = recordToApiFormat(record)
-        // Returner kun fra SQLite-cache hvis koordinater finnes.
-        // Ellers fall gjennom til API-kall for å hente oppdatert data med koordinater.
-        if (result.latitude !== undefined && !isNaN(parseFloat(String(result.latitude)))) {
+        // Returner kun fra SQLite-cache hvis koordinater OG beskrivelse finnes.
+        // Ellers fall gjennom til API-kall for å hente oppdatert data.
+        const hasCoords = result.latitude !== undefined && !isNaN(parseFloat(String(result.latitude)))
+        const hasDescription = !!(result.description_struct || result.description)
+        if (hasCoords && hasDescription) {
           this.hotelInfoCache.set(cacheKey, result)
           return result
         }
@@ -1080,7 +1094,7 @@ class RateHawkClient {
             images: this.parseAllImages(staticInfo?.images || hotelData.images),
             star_rating: starRating,
             amenity_groups: this.parseAmenityGroups(staticInfo?.amenity_groups),
-            description: staticInfo?.description_struct || hotelData.description || null,
+            description: staticInfo?.description_struct || staticInfo?.description || hotelData.description || null,
             check_in_time: staticInfo?.check_in_time || null,
             check_out_time: staticInfo?.check_out_time || null,
             reviews,
@@ -1138,7 +1152,10 @@ class RateHawkClient {
         throw new Error('RateHawk API credentials missing')
       }
 
-      const partnerOrderId = `SYDENKLAR_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const now = new Date()
+      const datePart = now.toISOString().slice(0, 10).replace(/-/g, '')
+      const randPart = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(4, '0')
+      const partnerOrderId = `SYD-${datePart}-${randPart}`
 
       const requestParams = {
         partner_order_id: partnerOrderId,
@@ -1195,6 +1212,7 @@ class RateHawkClient {
     paymentType: 'deposit' | 'now'
     amount: string
     currencyCode: string
+    amountSellB2b2c?: string
     remarks?: string
     roomCount?: number
   }) {
@@ -1259,7 +1277,7 @@ class RateHawkClient {
         partner: {
           partner_order_id: params.partnerOrderId,
           comment: 'Booking via Sydenklar.no',
-          amount_sell_b2b2c: '0'
+          amount_sell_b2b2c: params.amountSellB2b2c ?? '0',
         },
         language: 'en',
         rooms,
@@ -1335,9 +1353,14 @@ class RateHawkClient {
       if (!this.apiKey || !this.accessToken) {
         throw new Error('RateHawk API credentials missing')
       }
-      const data = await this.makeRequest('/hotel/order/cancel/client/', { partner_order_id: partnerOrderId }, 'POST')
+      const data = await this.makeRequest('/hotel/order/cancel/', { partner_order_id: partnerOrderId }, 'POST')
       if (data?.status === 'ok') {
-        return { success: true, message: 'Booking cancelled successfully', penalties: data.data?.penalties || null }
+        return {
+          success: true,
+          amountPayable: data.data?.amount_payable ?? null,
+          amountRefunded: data.data?.amount_refunded ?? null,
+          amountSell: data.data?.amount_sell ?? null,
+        }
       }
       throw new Error(data?.error || 'Cancellation failed')
     } catch (error: any) {
@@ -1422,6 +1445,10 @@ class RateHawkClient {
       console.error('Destination search error:', error)
       throw error
     }
+  }
+
+  async getHotelInfo(hotelId?: string, hid?: number): Promise<any | null> {
+    return this.getHotelStaticInfo(hotelId, hid)
   }
 }
 

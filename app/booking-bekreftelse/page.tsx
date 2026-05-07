@@ -224,6 +224,18 @@ async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
           Mine bookinger
         </Link>
       </div>
+
+      {/* Avbestilling */}
+      {isConfirmed && (
+        <div className="mt-6 text-center">
+          <Link
+            href={`/avbestill?ref=${booking.partnerOrderId}`}
+            className="text-sm text-[var(--muted)] hover:text-red-600 transition-colors underline underline-offset-2"
+          >
+            Avbestill denne bookingen
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
@@ -234,7 +246,7 @@ export default async function BookingBekreftelsePage({ searchParams }: PageProps
 
   return (
     <>
-      <Header />
+      <Header solid />
       <main className="min-h-screen bg-[var(--sand-light)] pt-24 pb-16">
         <Suspense fallback={
           <div className="flex items-center justify-center py-24">

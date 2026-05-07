@@ -124,13 +124,34 @@ export function rawApiToRecord(raw: any): HotelStaticRecord | null {
     amenities: raw.amenities ?? undefined,
     facts: raw.facts ?? undefined,
     location: locationData,
-    description: raw.description ?? undefined,
+    description: raw.description_struct
+      ? JSON.stringify(raw.description_struct)
+      : (raw.description ?? undefined),
     check_in_time: raw.check_in_time ?? undefined,
     check_out_time: raw.check_out_time ?? undefined,
     metapolicy_struct: raw.metapolicy_struct ?? undefined,
     metapolicy_extra_info: raw.metapolicy_extra_info ?? undefined,
     kind: raw.kind ?? undefined,
   }
+}
+
+/**
+ * description-kolonnen inneholder enten:
+ * - JSON-serialisert description_struct (array med {title, paragraphs})
+ * - Eller en vanlig tekststreng
+ * Returnerer begge varianter slik at konsumenter kan bruke enten.
+ */
+function parseDescription(raw: string | undefined): { description: any; description_struct: any } {
+  if (!raw) return { description: null, description_struct: null }
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed) || typeof parsed === 'object') {
+      return { description: parsed, description_struct: parsed }
+    }
+  } catch {
+    // Ikke JSON → vanlig tekststreng
+  }
+  return { description: raw, description_struct: null }
 }
 
 export function recordToApiFormat(r: HotelStaticRecord): Record<string, any> {
@@ -156,7 +177,7 @@ export function recordToApiFormat(r: HotelStaticRecord): Record<string, any> {
     amenities: r.amenities ?? [],
     facts: r.facts ?? {},
     location: loc,
-    description: r.description,
+    ...parseDescription(r.description),
     check_in_time: r.check_in_time,
     check_out_time: r.check_out_time,
     metapolicy_struct: r.metapolicy_struct,

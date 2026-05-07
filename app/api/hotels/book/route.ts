@@ -4,6 +4,7 @@ import { createBooking, updateBookingStatus } from '@/lib/users-db'
 import { sendBookingConfirmationEmail } from '@/lib/email'
 import { getCurrentUserId } from '@/lib/auth'
 import { randomUUID } from 'crypto'
+import { applyMarkup } from '@/lib/pricing'
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,7 +72,11 @@ export async function POST(request: NextRequest) {
       cancellationInfo: null,
     })
 
-    // RateHawk finishBooking
+    // RateHawk finishBooking — paymentType.amount er nettopris (trekkes fra deposit)
+    // amount er kundepris (inkl. bestillingsgebyr) lagret i DB
+    const netAmount = parseFloat(String(paymentType.amount || '0'))
+    const customerAmount = amount != null ? parseFloat(String(amount)) : applyMarkup(netAmount)
+
     const bookingResult = await ratehawkClient.finishBooking({
       bookHash: bookHash || '',
       partnerOrderId,
@@ -85,6 +90,7 @@ export async function POST(request: NextRequest) {
       paymentType: paymentType.type,
       amount: paymentType.amount,
       currencyCode: paymentType.currency_code,
+      amountSellB2b2c: customerAmount > 0 ? customerAmount.toFixed(2) : '0',
       remarks: remarks || '',
       roomCount: typeof roomCount === 'number' && roomCount > 0 ? roomCount : 1,
     })

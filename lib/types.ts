@@ -37,6 +37,8 @@ export interface RateHawkHotel {
   distance: string
   lat?: number
   lng?: number
+  freeCancellation?: boolean
+  freeCancellationBefore?: string | null
 }
 
 export interface RateHawkHotelSearchResponse {

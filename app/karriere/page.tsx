@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function KarrierePage() {
   return (
     <main className="min-h-screen flex flex-col bg-[var(--sand-light)]">
-      <Header />
+      <Header solid />
 
       <div className="bg-[var(--deep)] pt-24 pb-12 px-4">
         <div className="max-w-3xl mx-auto">

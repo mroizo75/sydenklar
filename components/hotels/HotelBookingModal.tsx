@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { loadStripe } from "@stripe/stripe-js"
+import { applyMarkup } from "@/lib/pricing"
 import {
   Elements,
   PaymentElement,
@@ -233,7 +234,8 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
   }, [prebookData, room.payment_options?.payment_types])
 
   const price = getPrice()
-  const pricePerNight = nights > 0 ? Math.round(price.amount / nights) : Math.round(price.amount)
+  const customerTotal = applyMarkup(price.amount)
+  const pricePerNight = nights > 0 ? Math.round(customerTotal / nights) : Math.round(customerTotal)
 
   const updateGuest = (field: keyof GuestInfo, value: string) =>
     setGuestInfo(prev => ({ ...prev, [field]: value }))
@@ -281,8 +283,12 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
         const prebook = data.prebookData
 
         if (prebook.price_changed) {
-          const newAmount = parseFloat(prebook.payment_types?.[0]?.amount || "0")
-          setPriceChangedInfo({ oldAmount: price.amount, newAmount, currency: price.currency })
+          const newNetAmount = parseFloat(prebook.payment_types?.[0]?.amount || "0")
+          setPriceChangedInfo({
+            oldAmount: applyMarkup(price.amount),
+            newAmount: applyMarkup(newNetAmount),
+            currency: price.currency,
+          })
           setPrebookData(prebook)
           setStep("price_changed")
         } else {
@@ -299,15 +305,16 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
     }
   }
 
-  // Init Stripe PaymentIntent
+  // Init Stripe PaymentIntent — kunden betaler nettopris + bestillingsgebyr
   const initializePayment = async (prebook: any) => {
     const confirmedPrice = getPrice(prebook)
+    const customerAmount = applyMarkup(confirmedPrice.amount)
     try {
       const res = await fetch("/api/hotels/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: confirmedPrice.amount,
+          amount: customerAmount,
           currency: confirmedPrice.currency,
           partnerOrderId: prebook.partner_order_id || `SYDENKLAR_${Date.now()}`,
           hotelName: hotel.name,
@@ -350,6 +357,11 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
       const confirmedPrice = getPrice(prebook)
       const partnerOrderId = prebook?.partner_order_id || `SYDENKLAR_${Date.now()}`
 
+      // netAmount → trekkes fra RateHawk-deposit
+      // customerAmount → hva kunden betalte via Stripe (lagres i DB og vises i e-post)
+      const netAmount = confirmedPrice.amount
+      const customerAmount = applyMarkup(netAmount)
+
       const res = await fetch("/api/hotels/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -367,7 +379,7 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
           roomConfigs: searchParams.roomConfigs ?? [],
           paymentType: {
             type: confirmedPrice.type,
-            amount: confirmedPrice.amount.toFixed(2),
+            amount: netAmount.toFixed(2),         // nettopris → RateHawk
             currency_code: confirmedPrice.currency,
           },
           stripePaymentIntentId: stripePaymentId,
@@ -381,7 +393,7 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
           adults: searchParams.adults,
           children: searchParams.children.length,
           roomCount: searchParams.roomCount ?? 1,
-          amount: confirmedPrice.amount,
+          amount: customerAmount,                 // kundepris → DB og e-post
           currency: confirmedPrice.currency,
           cancellationPolicy: (() => {
             const policies = room.cancellation_penalties?.policies
@@ -425,7 +437,7 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
     style: "currency",
     currency: price.currency,
     minimumFractionDigits: 0,
-  }).format(price.amount)
+  }).format(customerTotal)
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6">
@@ -674,7 +686,7 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
               >
                 <StripeCheckoutForm
                   clientSecret={clientSecret}
-                  amount={price.amount}
+                  amount={customerTotal}
                   currency={price.currency}
                   onSuccess={handlePaymentSuccess}
                   onError={(msg) => { setError(msg); setStep("error") }}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { X, Star, MapPin, ChevronLeft, ChevronRight, Clock, Wifi, Car, Waves, Dumbbell, UtensilsCrossed, Check, Images } from "lucide-react"
+import { applyMarkup } from "@/lib/pricing"
 
 interface TaxEntry {
   name: string
@@ -141,6 +142,33 @@ function RoomImageGallery({ images, roomName }: { images: string[]; roomName: st
   )
 }
 
+function renderDescription(description: any): React.ReactNode {
+  if (!description) {
+    return <p className="text-sm text-[var(--muted)]">Ingen beskrivelse tilgjengelig.</p>
+  }
+  if (Array.isArray(description)) {
+    return description.map((block: any, i: number) => (
+      <div key={i}>
+        {block.title && <h4 className="font-semibold text-[var(--deep)] mb-2">{block.title}</h4>}
+        {Array.isArray(block.paragraphs) && block.paragraphs.map((p: string, j: number) => (
+          <p key={j} className="text-sm text-[var(--muted)] leading-relaxed mb-2">{p}</p>
+        ))}
+      </div>
+    ))
+  }
+  if (typeof description === 'object' && Array.isArray(description.paragraphs)) {
+    return (
+      <div>
+        {description.title && <h4 className="font-semibold text-[var(--deep)] mb-2">{description.title}</h4>}
+        {description.paragraphs.map((p: string, j: number) => (
+          <p key={j} className="text-sm text-[var(--muted)] leading-relaxed mb-2">{p}</p>
+        ))}
+      </div>
+    )
+  }
+  return <p className="text-sm text-[var(--muted)] leading-relaxed">{String(description)}</p>
+}
+
 export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams, onClose, onBook }: HotelDetailModalProps) {
   const [hotel, setHotel] = useState<HotelDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -203,9 +231,10 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
       )
       const best = sorted[0]
       const taxes: TaxEntry[] = room.tax_data?.taxes ?? best.tax_data?.taxes ?? []
+      const netAmount = Math.round(parseFloat(best.amount || "0"))
 
       return {
-        amount: Math.round(parseFloat(best.amount || "0")),
+        amount: applyMarkup(netAmount),
         currency: best.currency_code || "NOK",
         taxes,
         totalExcludingTaxes: null,
@@ -508,15 +537,15 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                                         {pricePerNight.toLocaleString("nb-NO")}
                                       </p>
                                       <p className="text-xs text-[var(--muted)]">{price.currency}/natt</p>
-                                    {nights > 1 && (
-                                      <p className="text-xs text-[var(--muted)] mt-0.5">
-                                        {price.amount.toLocaleString("nb-NO")} {price.currency} totalt
-                                      </p>
-                                    )}
-                                    {price.taxes.some(t => !t.included_by_supplier) && (
-                                      <p className="text-[11px] text-amber-600 font-medium mt-1">+ avgifter v/innsjekk</p>
-                                    )}
-                                  </div>
+                                      {nights > 1 && (
+                                        <p className="text-xs text-[var(--muted)] mt-0.5">
+                                          {price.amount.toLocaleString("nb-NO")} {price.currency} totalt
+                                        </p>
+                                      )}
+                                      {price.taxes.some(t => !t.included_by_supplier) && (
+                                        <p className="text-[11px] text-amber-600 font-medium mt-1">+ avgifter v/innsjekk</p>
+                                      )}
+                                    </div>
                                     <button
                                       onClick={() => onBook(room, hotel)}
                                       className="bg-[var(--coral)] hover:bg-[var(--coral-dark)] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 whitespace-nowrap shadow-lg shadow-[var(--coral)]/20"
@@ -562,22 +591,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                 {/* INFO-TAB */}
                 {activeTab === "info" && (
                   <div className="max-w-2xl space-y-4">
-                    {hotel.description ? (
-                      Array.isArray(hotel.description) ? (
-                        hotel.description.map((block: any, i: number) => (
-                          <div key={i}>
-                            {block.title && <h4 className="font-semibold text-[var(--deep)] mb-2">{block.title}</h4>}
-                            {block.paragraphs && block.paragraphs.map((p: string, j: number) => (
-                              <p key={j} className="text-sm text-[var(--muted)] leading-relaxed mb-2">{p}</p>
-                            ))}
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-[var(--muted)] leading-relaxed">{String(hotel.description)}</p>
-                      )
-                    ) : (
-                      <p className="text-sm text-[var(--muted)]">Ingen beskrivelse tilgjengelig.</p>
-                    )}
+                    {renderDescription(hotel.description)}
                   </div>
                 )}
 

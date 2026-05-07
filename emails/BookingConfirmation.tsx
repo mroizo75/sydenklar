@@ -33,6 +33,7 @@ export function BookingConfirmationEmail({
 }: BookingConfirmationProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sydenklar.no'
   const confirmationUrl = `${baseUrl}/booking-bekreftelse?ref=${partnerOrderId}`
+  const cancelUrl = `${baseUrl}/avbestill?ref=${partnerOrderId}`
 
   const formattedAmount = new Intl.NumberFormat('nb-NO', {
     style: 'currency',
@@ -234,7 +235,7 @@ export function BookingConfirmationEmail({
                         <table width="100%" cellPadding="0" cellSpacing="0">
                           <tbody>
                             <tr>
-                              <td align="center" style={{ paddingTop: '8px' }}>
+                              <td align="center" style={{ paddingTop: '8px', paddingBottom: '16px' }}>
                                 <a
                                   href={confirmationUrl}
                                   style={{
@@ -249,6 +250,23 @@ export function BookingConfirmationEmail({
                                   }}
                                 >
                                   Se bookingdetaljer
+                                </a>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td align="center">
+                                <a
+                                  href={cancelUrl}
+                                  style={{
+                                    color: '#6b7280',
+                                    fontSize: '13px',
+                                    textDecoration: 'none',
+                                    display: 'inline-block',
+                                    borderBottom: '1px solid #d1d5db',
+                                    paddingBottom: '1px',
+                                  }}
+                                >
+                                  Avbestill denne bookingen
                                 </a>
                               </td>
                             </tr>

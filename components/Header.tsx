@@ -13,16 +13,22 @@ const navLinks = [
   { label: "Destinasjoner", href: "/destinasjoner" },
 ];
 
-export default function Header() {
-  const [scrolled, setScrolled] = useState(false);
+interface HeaderProps {
+  solid?: boolean
+}
+
+export default function Header({ solid = false }: HeaderProps) {
+  const [scrolled, setScrolled] = useState(solid);
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: session, status } = useSession();
 
   useEffect(() => {
+    if (solid) return
     const handler = () => setScrolled(window.scrollY > 40);
+    handler()
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
-  }, []);
+  }, [solid]);
 
   const isLoggedIn = status === "authenticated" && !!session?.user;
   const firstName = (session?.user as any)?.firstName ?? session?.user?.name?.split(" ")[0];

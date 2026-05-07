@@ -48,7 +48,7 @@ export default async function KontoPage() {
 
   return (
     <>
-      <Header />
+      <Header solid />
       <main className="min-h-screen bg-[var(--sand-light)] pt-24 pb-16">
         <div className="max-w-4xl mx-auto px-4">
 
@@ -109,36 +109,49 @@ export default async function KontoPage() {
                     }).format(booking.amount)
                   : null
 
+                const isActive = booking.status === 'confirmed' || booking.status === 'paid'
+
                 return (
-                  <Link
-                    key={booking.id}
-                    href={`/booking-bekreftelse?ref=${booking.partnerOrderId}`}
-                    className="block bg-white rounded-2xl border border-[var(--border)] p-5 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-[var(--deep)] truncate">{booking.hotelName || 'Hotell'}</h3>
-                          <StatusBadge status={booking.status} />
-                        </div>
-                        {booking.roomName && (
-                          <p className="text-sm text-[var(--muted)] truncate mb-2">{booking.roomName}</p>
-                        )}
-                        <div className="flex items-center gap-4 text-sm text-[var(--muted)]">
-                          {booking.checkIn && (
-                            <span>{formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}</span>
+                  <div key={booking.id} className="bg-white rounded-2xl border border-[var(--border)] overflow-hidden hover:shadow-md transition-shadow">
+                    <Link
+                      href={`/booking-bekreftelse?ref=${booking.partnerOrderId}`}
+                      className="block p-5"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-[var(--deep)] truncate">{booking.hotelName || 'Hotell'}</h3>
+                            <StatusBadge status={booking.status} />
+                          </div>
+                          {booking.roomName && (
+                            <p className="text-sm text-[var(--muted)] truncate mb-2">{booking.roomName}</p>
                           )}
-                          {nights && <span>{nights} netter</span>}
+                          <div className="flex items-center gap-4 text-sm text-[var(--muted)]">
+                            {booking.checkIn && (
+                              <span>{formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}</span>
+                            )}
+                            {nights && <span>{nights} netter</span>}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          {formattedAmount && (
+                            <p className="font-display text-lg text-[var(--deep)]">{formattedAmount}</p>
+                          )}
+                          <p className="text-xs text-[var(--muted)] mt-0.5 font-mono">{booking.partnerOrderId.slice(-8)}</p>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        {formattedAmount && (
-                          <p className="font-display text-lg text-[var(--deep)]">{formattedAmount}</p>
-                        )}
-                        <p className="text-xs text-[var(--muted)] mt-0.5 font-mono">{booking.partnerOrderId.slice(-8)}</p>
+                    </Link>
+                    {isActive && (
+                      <div className="border-t border-[var(--border)] px-5 py-2.5 flex justify-end">
+                        <Link
+                          href={`/avbestill?ref=${booking.partnerOrderId}`}
+                          className="text-xs text-[var(--muted)] hover:text-red-600 transition-colors underline underline-offset-2"
+                        >
+                          Avbestill
+                        </Link>
                       </div>
-                    </div>
-                  </Link>
+                    )}
+                  </div>
                 )
               })}
             </div>

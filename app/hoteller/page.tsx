@@ -41,6 +41,7 @@ function HotellPageContent() {
     ? searchParams.get("childAges")!.split(",").map(Number).filter(n => !isNaN(n))
     : Array(urlBarn).fill(10)
   const urlHotelNavn = searchParams.get("hotel") || ""
+  const urlResidency = searchParams.get("residency") || "no"
   const [searchState, setSearchState] = useState<SearchState | null>(null)
   const [results, setResults] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(false)
@@ -134,7 +135,7 @@ function HotellPageContent() {
             checkIn,
             checkOut,
             roomConfigs,
-            residency: "no",
+            residency: urlResidency,
           })
           return
         }
@@ -156,7 +157,7 @@ function HotellPageContent() {
           checkIn,
           checkOut,
           roomConfigs,
-          residency: "no",
+          residency: urlResidency,
         })
       } catch {
         setError("Kunne ikke laste destinasjonen. Søk manuelt.")
@@ -166,7 +167,7 @@ function HotellPageContent() {
 
     autoSearch()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlDestination, urlDestinationId])
+  }, [urlDestination, urlDestinationId, urlResidency])
 
   const totalAdults = searchState?.roomConfigs.reduce((s, r) => s + r.adults, 0) || 2
   const allChildren = searchState?.roomConfigs.flatMap(r => r.childAges) || []

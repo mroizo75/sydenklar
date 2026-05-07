@@ -42,7 +42,7 @@ const VALUES = [
 export default function OmOssPage() {
   return (
     <main className="min-h-screen flex flex-col bg-[var(--sand-light)]">
-      <Header />
+      <Header solid />
 
       {/* Hero */}
       <div className="bg-[var(--deep)] pt-24 pb-16 px-4">

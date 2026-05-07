@@ -1,5 +1,6 @@
+import Link from "next/link"
 import { RateHawkHotel } from "@/lib/types"
-import { MapPin, Star, Wifi, Car, UtensilsCrossed, Waves, Coffee, Dumbbell, Sparkles, Wind } from "lucide-react"
+import { MapPin, Star, Wifi, Car, UtensilsCrossed, Waves, Coffee, Dumbbell, Sparkles, Wind, ShieldCheck } from "lucide-react"
 
 interface HotelCardProps {
   hotel: RateHawkHotel
@@ -55,8 +56,14 @@ function StarRow({ rating }: { rating: number }) {
   )
 }
 
+function hotelInfoUrl(hotel: RateHawkHotel, sp: { checkIn: string; checkOut: string; adults: number }): string {
+  const p = new URLSearchParams({ checkIn: sp.checkIn, checkOut: sp.checkOut, adults: String(sp.adults) })
+  if (hotel.hid) p.set("hid", String(hotel.hid))
+  return `/hotell/${encodeURIComponent(hotel.id)}?${p.toString()}`
+}
+
 // ─── Horizontal (desktop split-panel) ────────────────────────────────────────
-function HorizontalCard({ hotel, onSelect, onHover }: { hotel: RateHawkHotel; onSelect: (h: RateHawkHotel) => void; onHover?: (id: string | null) => void }) {
+function HorizontalCard({ hotel, onSelect, onHover, searchParams }: { hotel: RateHawkHotel; onSelect: (h: RateHawkHotel) => void; onHover?: (id: string | null) => void; searchParams: { checkIn: string; checkOut: string; adults: number; children: number[] } }) {
   const hasImage = hotel.image && !hotel.image.startsWith("data:image")
   const nights = hotel.price.nights || 1
   const shownAmenities = hotel.amenities.slice(0, 6)
@@ -163,19 +170,32 @@ function HorizontalCard({ hotel, onSelect, onHover }: { hotel: RateHawkHotel; on
           )}
         </div>
 
+        {hotel.freeCancellation && (
+          <div className="flex items-center gap-1 mt-2.5">
+            <ShieldCheck size={11} className="text-green-600 shrink-0" />
+            <span className="text-[10px] font-medium text-green-700">Gratis avbestilling</span>
+          </div>
+        )}
         <button
           onClick={() => onSelect(hotel)}
           className="w-full mt-3 py-2.5 bg-[var(--coral)] hover:bg-[var(--deep)] text-white text-[12px] font-bold rounded-xl transition-all hover:shadow-md"
         >
           Vis tilbud
         </button>
+        <Link
+          href={hotelInfoUrl(hotel, searchParams)}
+          onClick={e => e.stopPropagation()}
+          className="block w-full mt-2 py-2 text-center text-[11px] font-medium text-[var(--sea)] hover:text-[var(--deep)] hover:underline transition-colors"
+        >
+          Se hotellet →
+        </Link>
       </div>
     </article>
   )
 }
 
 // ─── Vertikal (mobil / grid) ─────────────────────────────────────────────────
-function VerticalCard({ hotel, onSelect, onHover }: { hotel: RateHawkHotel; onSelect: (h: RateHawkHotel) => void; onHover?: (id: string | null) => void }) {
+function VerticalCard({ hotel, onSelect, onHover, searchParams }: { hotel: RateHawkHotel; onSelect: (h: RateHawkHotel) => void; onHover?: (id: string | null) => void; searchParams: { checkIn: string; checkOut: string; adults: number; children: number[] } }) {
   const hasImage = hotel.image && !hotel.image.startsWith("data:image")
   const nights = hotel.price.nights || 1
   const shownAmenities = hotel.amenities.slice(0, 5)
@@ -268,13 +288,29 @@ function VerticalCard({ hotel, onSelect, onHover }: { hotel: RateHawkHotel; onSe
                 {hotel.price.totalPrice.toLocaleString("nb-NO")} kr totalt
               </p>
             )}
+            {hotel.freeCancellation && (
+              <div className="flex items-center gap-1 mt-1.5">
+                <ShieldCheck size={11} className="text-green-600 shrink-0" />
+                <span className="text-[10px] font-medium text-green-700">Gratis avbestilling</span>
+              </div>
+            )}
           </div>
-          <button
-            onClick={e => { e.stopPropagation(); onSelect(hotel) }}
-            className="bg-[var(--coral)] hover:bg-[var(--deep)] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all"
-          >
-            Vis tilbud
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={e => { e.stopPropagation(); onSelect(hotel) }}
+              className="bg-[var(--coral)] hover:bg-[var(--deep)] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all"
+            >
+              Vis tilbud
+            </button>
+
+            <Link
+              href={hotelInfoUrl(hotel, searchParams)}
+              onClick={e => e.stopPropagation()}
+              className="text-[11px] font-medium text-[var(--sea)] hover:text-[var(--deep)] hover:underline transition-colors whitespace-nowrap"
+            >
+              Se hotellet →
+            </Link>
+          </div>
         </div>
       </div>
     </article>
@@ -282,9 +318,9 @@ function VerticalCard({ hotel, onSelect, onHover }: { hotel: RateHawkHotel; onSe
 }
 
 // ─── Export ──────────────────────────────────────────────────────────────────
-export default function HotelCard({ hotel, onSelect, onHover, variant = "vertical" }: HotelCardProps) {
+export default function HotelCard({ hotel, onSelect, onHover, searchParams, variant = "vertical" }: HotelCardProps) {
   if (variant === "horizontal") {
-    return <HorizontalCard hotel={hotel} onSelect={onSelect} onHover={onHover} />
+    return <HorizontalCard hotel={hotel} onSelect={onSelect} onHover={onHover} searchParams={searchParams} />
   }
-  return <VerticalCard hotel={hotel} onSelect={onSelect} onHover={onHover} />
+  return <VerticalCard hotel={hotel} onSelect={onSelect} onHover={onHover} searchParams={searchParams} />
 }

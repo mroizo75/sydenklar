@@ -1,4 +1,4 @@
-import { RateHawkHotelSearchParams, RateHawkHotelSearchResponse } from '@/lib/types'
+import { RateHawkHotelSearchParams, RateHawkHotelSearchResponse, SearchFilters } from '@/lib/types'
 import { BOOKING_FEE_PERCENT } from '@/lib/pricing'
 import {
   getHotelById,
@@ -148,6 +148,8 @@ class RateHawkClient {
 
       const isHotelId = params.destinationType === 'hotel' && /^\d+$/.test(regionId)
 
+      const preFilters = this.buildPreFilters(params.filters)
+
       if (isHotelId) {
         const hotelParams = {
           hids: [parseInt(regionId)],
@@ -156,7 +158,8 @@ class RateHawkClient {
           residency,
           language: 'en',
           guests,
-          currency: params.currency || 'NOK'
+          currency: params.currency || 'NOK',
+          ...preFilters,
         }
         try {
           data = await this.makeRequest('/search/serp/hotels/', hotelParams, 'POST')
@@ -172,7 +175,8 @@ class RateHawkClient {
           residency,
           language: 'en',
           guests,
-          currency: params.currency || 'NOK'
+          currency: params.currency || 'NOK',
+          ...preFilters,
         }
 
         try {
@@ -195,7 +199,7 @@ class RateHawkClient {
               currency: params.currency || 'NOK'
             }
             try {
-              data = await this.makeRequest('/search/serp/geo/', geoParams, 'POST')
+              data = await this.makeRequest('/search/serp/geo/', { ...geoParams, ...preFilters }, 'POST')
             } catch (geoError: any) {
               lastError = geoError
               throw new Error(
@@ -527,6 +531,21 @@ class RateHawkClient {
       totalResults: allHotels.length,
       hasMore: (offset + batchSize) < allHotels.length
     }
+  }
+
+  private buildPreFilters(filters?: SearchFilters): Record<string, unknown> {
+    if (!filters) return {}
+    const result: Record<string, unknown> = {}
+    if (filters.meal_types && filters.meal_types.length > 0) {
+      result.meal_types = filters.meal_types
+    }
+    if (filters.stars_gte !== undefined) {
+      result.stars_gte = filters.stars_gte
+    }
+    if (filters.free_cancellation === true) {
+      result.free_cancellation = true
+    }
+    return result
   }
 
   private getCoordinatesForDestination(destination: string, regionId: string): { lat: number; lon: number } {
@@ -1007,6 +1026,12 @@ class RateHawkClient {
             const sizeSqm: number | null = matchedGroup?.size_sqm ?? rdt.area_sqm ?? rdt.size_sqm ?? null
             const view: string | null = matchedGroup?.view ?? null
 
+            const rawNonFree: string[] = rate.non_free_amenities || []
+            const keysPickup: string | null =
+              rate.room_data_trans?.keys_pickup_instructions ||
+              rate.keys_pickup_instructions ||
+              null
+
             rooms.push({
               book_hash: rate.book_hash,
               room_name: rate.room_name || 'Standard rom',
@@ -1020,6 +1045,8 @@ class RateHawkClient {
                 ...(rate.amenities_data || []).map((a: string) => this.formatAmenityName(a)),
                 ...(matchedGroup?.room_amenities || [])
               ],
+              non_free_amenities: rawNonFree.map((a: string) => this.formatAmenityName(a)),
+              keys_pickup_instructions: keysPickup,
               allotment: rate.allotment || 0,
               capacity,
               size_sqm: sizeSqm,
@@ -1215,6 +1242,7 @@ class RateHawkClient {
     amountSellB2b2c?: string
     remarks?: string
     roomCount?: number
+    upsellData?: object[]
   }) {
     try {
       if (!this.apiKey || !this.accessToken) {
@@ -1261,7 +1289,7 @@ class RateHawkClient {
         }))
       }
 
-      const requestParams = {
+      const requestParams: Record<string, unknown> = {
         book_hash: params.bookHash,
         user: {
           email: 'bookings@sydenklar.no',
@@ -1287,6 +1315,10 @@ class RateHawkClient {
           currency_code: params.currencyCode
         },
         return_path: 'https://sydenklar.no/booking-bekreftelse'
+      }
+
+      if (params.upsellData && params.upsellData.length > 0) {
+        requestParams.upsell_data = params.upsellData
       }
 
       const data = await this.makeRequest('/hotel/order/booking/finish/', requestParams, 'POST')

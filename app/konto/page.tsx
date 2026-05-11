@@ -137,7 +137,7 @@ export default async function KontoPage() {
                           {formattedAmount && (
                             <p className="font-display text-lg text-[var(--deep)]">{formattedAmount}</p>
                           )}
-                          <p className="text-xs text-[var(--muted)] mt-0.5 font-mono">{booking.partnerOrderId.slice(-8)}</p>
+                          <p className="text-xs text-[var(--muted)] mt-0.5 font-mono">{booking.partnerOrderId}</p>
                         </div>
                       </div>
                     </Link>

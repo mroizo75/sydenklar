@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ratehawkClient } from '@/lib/ratehawk-client'
 import { createBooking, updateBookingStatus } from '@/lib/users-db'
-import { sendBookingConfirmationEmail } from '@/lib/email'
+import { sendBookingConfirmationEmail, sendAdminBookingNotification } from '@/lib/email'
 import { getCurrentUserId } from '@/lib/auth'
 import { randomUUID } from 'crypto'
 import { applyMarkup } from '@/lib/pricing'
@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
       amount,
       currency,
       cancellationPolicy,
+      upsellData,
+      nonFreeAmenities,
+      keysPickupInstructions,
     } = body
 
     if (!partnerOrderId || !guestInfo || !paymentType) {
@@ -70,6 +73,18 @@ export async function POST(request: NextRequest) {
       ratehawkOrderId: null,
       status: 'pending',
       cancellationInfo: null,
+      cancellationPolicy: cancellationPolicy ?? null,
+      hotelAddress: hotelAddress ?? null,
+      prebookData: {
+        bookHash: bookHash ?? '',
+        guestInfo,
+        paymentType,
+        remarks: remarks ?? '',
+        rooms: typeof roomCount === 'number' ? roomCount : 1,
+        ...(upsellData ? { upsellData } : {}),
+        ...(nonFreeAmenities?.length ? { nonFreeAmenities } : {}),
+        ...(keysPickupInstructions ? { keysPickupInstructions } : {}),
+      },
     })
 
     // RateHawk finishBooking — paymentType.amount er nettopris (trekkes fra deposit)
@@ -93,6 +108,7 @@ export async function POST(request: NextRequest) {
       amountSellB2b2c: customerAmount > 0 ? customerAmount.toFixed(2) : '0',
       remarks: remarks || '',
       roomCount: typeof roomCount === 'number' && roomCount > 0 ? roomCount : 1,
+      upsellData: Array.isArray(upsellData) && upsellData.length > 0 ? upsellData : undefined,
     })
 
     if (!bookingResult.success && (bookingResult as any).isFinal) {
@@ -164,6 +180,19 @@ export async function POST(request: NextRequest) {
         currency: currency || 'NOK',
         hotelAddress: hotelAddress ?? undefined,
         cancellationPolicy: cancellationPolicy ?? undefined,
+      })
+
+      // Intern varsling til admin
+      sendAdminBookingNotification({
+        partnerOrderId,
+        guestName: `${guestInfo.firstName} ${guestInfo.lastName}`,
+        guestEmail: guestInfo.email,
+        hotelName: hotelName || 'Hotell',
+        checkIn: checkIn || '',
+        checkOut: checkOut || '',
+        adults: adults ?? 0,
+        amount: amount != null ? parseFloat(String(amount)) : 0,
+        currency: currency || 'NOK',
       })
     }
 

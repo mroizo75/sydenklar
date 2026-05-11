@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ChevronLeft, ChevronRight, Star, Tag, Wifi, Waves, UtensilsCrossed } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Clock, Star, Tag, Wifi, Waves, UtensilsCrossed } from 'lucide-react'
 
 interface Deal {
   id: string
@@ -121,15 +121,43 @@ function formatDate(date: Date): string {
   return date.toISOString().split('T')[0]
 }
 
-function getNextWeekendDates(): { checkIn: string; checkOut: string } {
+/** Returnerer neste fredag som ikke er innen 24 timer */
+function getNextWeekendDates(): { checkIn: string; checkOut: string; fridayMs: number } {
   const now = new Date()
   const dayOfWeek = now.getDay()
-  const daysUntilFriday = (5 - dayOfWeek + 7) % 7 || 7
+  let daysUntilFriday = (5 - dayOfWeek + 7) % 7
+
+  if (daysUntilFriday === 0) {
+    // Det er fredag – hopp til neste uke
+    daysUntilFriday = 7
+  } else {
+    // Sjekk om det er under 24 timer til fredag midnatt
+    const candidate = new Date(now)
+    candidate.setDate(now.getDate() + daysUntilFriday)
+    candidate.setHours(0, 0, 0, 0)
+    if (candidate.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
+      daysUntilFriday += 7
+    }
+  }
+
   const friday = new Date(now)
   friday.setDate(now.getDate() + daysUntilFriday)
+  friday.setHours(0, 0, 0, 0)
   const sunday = new Date(friday)
   sunday.setDate(friday.getDate() + 2)
-  return { checkIn: formatDate(friday), checkOut: formatDate(sunday) }
+  return { checkIn: formatDate(friday), checkOut: formatDate(sunday), fridayMs: friday.getTime() }
+}
+
+function formatCountdown(msLeft: number): string {
+  if (msLeft <= 0) return ''
+  const totalSec = Math.floor(msLeft / 1000)
+  const days = Math.floor(totalSec / 86400)
+  const hours = Math.floor((totalSec % 86400) / 3600)
+  const mins = Math.floor((totalSec % 3600) / 60)
+  if (days > 1) return `${days} dager`
+  if (days === 1) return `${days} dag og ${hours} t`
+  if (hours > 0) return `${hours} t ${mins} min`
+  return `${mins} min`
 }
 
 function buildHotellUrl(deal: Deal, checkIn: string, checkOut: string): string {
@@ -239,21 +267,50 @@ const CARD_W = 320 + 20
 export default function BestDealsSection() {
   const [dates, setDates] = useState({ checkIn: '', checkOut: '' })
   const [formattedDate, setFormattedDate] = useState('')
+  const [countdown, setCountdown] = useState('')
   const [canLeft, setCanLeft] = useState(false)
   const [canRight, setCanRight] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fridayMsRef = useRef(0)
 
-  useEffect(() => {
-    const { checkIn, checkOut } = getNextWeekendDates()
-    setDates({ checkIn, checkOut })
-    // Parse as local dates to avoid UTC midnight shift
+  const applyDates = (checkIn: string, checkOut: string) => {
     const [inY, inM, inD] = checkIn.split('-').map(Number)
     const [outY, outM, outD] = checkOut.split('-').map(Number)
     const dIn = new Date(inY, inM - 1, inD)
     const dOut = new Date(outY, outM - 1, outD)
     const inStr = dIn.toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric', month: 'long' })
     const outStr = dOut.toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric', month: 'long' })
+    setDates({ checkIn, checkOut })
     setFormattedDate(`${inStr} – ${outStr}`)
+  }
+
+  useEffect(() => {
+    const refresh = () => {
+      const { checkIn, checkOut, fridayMs } = getNextWeekendDates()
+      fridayMsRef.current = fridayMs
+      applyDates(checkIn, checkOut)
+    }
+    refresh()
+
+    // Oppdater nedtellingen hvert minutt og bytt helg ved behov
+    const interval = setInterval(() => {
+      const msLeft = fridayMsRef.current - Date.now()
+      if (msLeft < 24 * 60 * 60 * 1000) {
+        // Nå under 24 timer – hent nye datoer (neste helg)
+        refresh()
+      } else {
+        setCountdown(formatCountdown(msLeft))
+      }
+    }, 60_000)
+
+    // Sett første verdi umiddelbart
+    setTimeout(() => {
+      const msLeft = fridayMsRef.current - Date.now()
+      setCountdown(formatCountdown(msLeft))
+    }, 0)
+
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const sync = () => {
@@ -293,9 +350,17 @@ export default function BestDealsSection() {
               <em className="italic">akkurat nå</em>
             </h2>
             {formattedDate && (
-              <p className="text-sm text-[var(--muted)] mt-2">
-                Neste helg · {formattedDate} · 2 gjester
-              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-2">
+                <p className="text-sm text-[var(--muted)]">
+                  Neste helg · {formattedDate} · 2 gjester
+                </p>
+                {countdown && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--coral)] bg-[var(--coral)]/10 border border-[var(--coral)]/20 px-2.5 py-1 rounded-full">
+                    <Clock size={10} />
+                    Tilbudet utløper om {countdown}
+                  </span>
+                )}
+              </div>
             )}
           </div>
 

@@ -90,6 +90,10 @@ async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
 
   const registerUrl = `/logg-inn?mode=register&email=${encodeURIComponent(guestEmail)}&ref=${encodeURIComponent(partnerOrderId)}`
 
+  const pd = booking.prebookData as Record<string, unknown> | null
+  const keysPickup = typeof pd?.keysPickupInstructions === 'string' ? pd.keysPickupInstructions : null
+  const nonFreeList: string[] = Array.isArray(pd?.nonFreeAmenities) ? (pd!.nonFreeAmenities as string[]) : []
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
       {/* Status header */}
@@ -198,6 +202,29 @@ async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
           </div>
         )}
       </div>
+
+      {/* Nøkkelutlevering */}
+      {keysPickup && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5">
+          <p className="font-semibold text-blue-900 text-sm mb-1.5">Nøkkelutlevering</p>
+          <p className="text-blue-800 text-sm leading-relaxed">{keysPickup}</p>
+        </div>
+      )}
+
+      {/* Tillegg mot betaling */}
+      {nonFreeList.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+          <p className="font-semibold text-amber-900 text-sm mb-1.5">Tillegg betales på hotellet</p>
+          <ul className="space-y-1">
+            {nonFreeList.map((item, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm text-amber-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Info box */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 text-sm text-blue-800">

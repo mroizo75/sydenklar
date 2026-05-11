@@ -4,6 +4,7 @@ import { render } from '@react-email/render'
 import { supabase } from '@/lib/supabase'
 import {
   getHotelsByCity,
+  getHotelCountByCity,
   getCitiesByCountry,
   getCountriesWithCounts,
   slugify,
@@ -44,13 +45,41 @@ function pickWeeklyContent(weekNumber: number): { country: string; cityIndex: nu
 
 function buildHotelUrl(hotel: { id: string; country_name?: string; city_name?: string }): string {
   if (!hotel.country_name || !hotel.city_name) return `${BASE_URL}/hoteller`
-  const countrySlug = slugify(hotel.country_name)
+  const countrySlug = hotel.country_name === 'Norway' ? 'norge' : slugify(hotel.country_name)
   const citySlug = slugify(hotel.city_name)
   const hotelSlug = slugify(hotel.id)
-  const isNorway = hotel.country_name === 'Norway'
-  return isNorway
-    ? `${BASE_URL}/hoteller/norge/${citySlug}/${hotelSlug}`
-    : `${BASE_URL}/hoteller/${countrySlug}/${citySlug}/${hotelSlug}`
+  return `${BASE_URL}/hoteller/${countrySlug}/${citySlug}/${hotelSlug}`
+}
+
+function buildCityUrl(countryName: string, citySlug: string): string {
+  const countrySlug = countryName === 'Norway' ? 'norge' : slugify(countryName)
+  return `${BASE_URL}/hoteller/${countrySlug}/${citySlug}`
+}
+
+function mapHotel(h: {
+  id: string
+  name?: string
+  city_name?: string
+  country_name?: string
+  star_rating?: number
+  first_image?: string
+}): NewsletterHotel {
+  return {
+    name: h.name ?? 'Hotell',
+    city: h.city_name ?? '',
+    country: COUNTRY_DISPLAY[h.country_name ?? ''] ?? (h.country_name ?? ''),
+    starRating: h.star_rating ?? 0,
+    imageUrl: h.first_image ? h.first_image.replace('{size}', '640x480') : null,
+    pageUrl: buildHotelUrl({ id: h.id, country_name: h.country_name, city_name: h.city_name }),
+  }
+}
+
+function fetchHotelsForCity(countryName: string, cityName: string, limit: number, weekNumber: number): NewsletterHotel[] {
+  const total = getHotelCountByCity(countryName, cityName)
+  if (total === 0) return []
+  const rawOffset = (weekNumber % 10) * 3
+  const safeOffset = rawOffset < total ? rawOffset : 0
+  return getHotelsByCity(countryName, cityName, limit, safeOffset).map(mapHotel)
 }
 
 export async function POST(req: NextRequest) {
@@ -64,75 +93,69 @@ export async function POST(req: NextRequest) {
   const weekNumber = getWeekNumber(now)
   const year = now.getFullYear()
 
-  // Determine weekly country + city
   const { country, cityIndex } = pickWeeklyContent(weekNumber)
   const cities = getCitiesByCountry(country)
 
   let destination: NewsletterDestination
   let hotels: NewsletterHotel[] = []
+  let activeCountry = country
 
-  if (cities.length === 0) {
-    // Fallback to Norway if no data for this country yet
-    const norwayCities = getCitiesByCountry('Norway')
-    const fallbackCity = norwayCities[0]
-    destination = {
-      cityName: fallbackCity?.city_name ?? 'Oslo',
-      countryName: 'Norge',
-      hotelCount: fallbackCity?.count ?? 0,
-      pageUrl: `${BASE_URL}/hoteller/norge/${fallbackCity?.slug ?? 'oslo'}`,
-    }
-  } else {
+  if (cities.length > 0) {
     const city = cities[cityIndex % cities.length]
-    const countryDisplay = COUNTRY_DISPLAY[country] ?? country
-    const countrySlug = slugify(country)
-    const isNorway = country === 'Norway'
     destination = {
       cityName: city.city_name,
-      countryName: countryDisplay,
+      countryName: COUNTRY_DISPLAY[country] ?? country,
       hotelCount: city.count,
-      pageUrl: isNorway
-        ? `${BASE_URL}/hoteller/norge/${city.slug}`
-        : `${BASE_URL}/hoteller/${countrySlug}/${city.slug}`,
+      pageUrl: buildCityUrl(country, city.slug),
+    }
+    hotels = fetchHotelsForCity(country, city.city_name, 3, weekNumber)
+  } else {
+    // Chosen country has no DB data — fall back to best available country
+    const allCountries = getCountriesWithCounts()
+    const fallbackCountry = allCountries[0]
+    if (fallbackCountry) {
+      activeCountry = fallbackCountry.country_name
+      const fallbackCities = getCitiesByCountry(activeCountry)
+      const fallbackCity = fallbackCities[0]
+      if (fallbackCity) {
+        destination = {
+          cityName: fallbackCity.city_name,
+          countryName: COUNTRY_DISPLAY[activeCountry] ?? activeCountry,
+          hotelCount: fallbackCity.count,
+          pageUrl: buildCityUrl(activeCountry, fallbackCity.slug),
+        }
+        hotels = fetchHotelsForCity(activeCountry, fallbackCity.city_name, 3, weekNumber)
+      } else {
+        destination = {
+          cityName: 'Reisemål',
+          countryName: 'Verden',
+          hotelCount: 0,
+          pageUrl: `${BASE_URL}/hoteller`,
+        }
+      }
+    } else {
+      destination = {
+        cityName: 'Reisemål',
+        countryName: 'Verden',
+        hotelCount: 0,
+        pageUrl: `${BASE_URL}/hoteller`,
+      }
     }
   }
 
-  // Pick 3 top-rated hotels from the destination city, rotating by week
-  const destinationCity = cities[cityIndex % Math.max(cities.length, 1)]
-  if (destinationCity) {
-    const offset = (weekNumber % 10) * 3
-    const rawHotels = getHotelsByCity(country, destinationCity.city_name, 3, offset)
-    hotels = rawHotels.map(h => ({
-      name: h.name ?? 'Hotell',
-      city: h.city_name ?? '',
-      country: COUNTRY_DISPLAY[h.country_name ?? ''] ?? (h.country_name ?? ''),
-      starRating: h.star_rating ?? 0,
-      imageUrl: h.first_image ? h.first_image.replace('{size}', '640x480') : null,
-      pageUrl: buildHotelUrl({ id: h.id, country_name: h.country_name, city_name: h.city_name }),
-    }))
-  }
-
-  // If not enough, fill from top countries
+  // Fill remaining slots from top countries if still short
   if (hotels.length < 3) {
-    const allCountries = getCountriesWithCounts().slice(0, 5)
+    const allCountries = getCountriesWithCounts()
     for (const c of allCountries) {
       if (hotels.length >= 3) break
+      if (c.country_name === activeCountry) continue
       const topCity = getCitiesByCountry(c.country_name)[0]
       if (!topCity) continue
       const fill = getHotelsByCity(c.country_name, topCity.city_name, 3 - hotels.length)
-      fill.forEach(h => {
-        hotels.push({
-          name: h.name ?? 'Hotell',
-          city: h.city_name ?? '',
-          country: COUNTRY_DISPLAY[h.country_name ?? ''] ?? (h.country_name ?? ''),
-          starRating: h.star_rating ?? 0,
-          imageUrl: h.first_image ? h.first_image.replace('{size}', '640x480') : null,
-          pageUrl: buildHotelUrl({ id: h.id, country_name: h.country_name, city_name: h.city_name }),
-        })
-      })
+      fill.forEach(h => hotels.push(mapHotel(h)))
     }
   }
 
-  // Fetch active subscribers in batches
   const { data: subscribers, error: subError } = await supabase
     .from('newsletter_subscribers')
     .select('email, first_name, unsubscribe_token')
@@ -146,7 +169,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Ingen aktive abonnenter', sent: 0 })
   }
 
-  // Send in parallel batches of 10
   let sent = 0
   let failed = 0
   const BATCH = 10
@@ -157,7 +179,6 @@ export async function POST(req: NextRequest) {
       batch.map(async (sub) => {
         try {
           const unsubscribeUrl = `${BASE_URL}/api/newsletter/unsubscribe?token=${sub.unsubscribe_token}`
-
           const html = await render(
             WeeklyNewsletterEmail({
               firstName: sub.first_name ?? undefined,
@@ -173,7 +194,7 @@ export async function POST(req: NextRequest) {
           await resend.emails.send({
             from: `Sydenklar <${FROM}>`,
             to: sub.email,
-            subject: `Ukens reiseinspirasjon – Uke ${weekNumber}: ${destination.cityName}`,
+            subject: `✈️ Ukens reiseinspirasjon – ${destination.cityName} (uke ${weekNumber})`,
             html,
           })
           sent++
@@ -185,10 +206,11 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
-    message: `Nyhetsbrev sendt`,
+    message: 'Nyhetsbrev sendt',
     week: weekNumber,
     year,
     destination: destination.cityName,
+    hotels: hotels.length,
     sent,
     failed,
     total: subscribers.length,

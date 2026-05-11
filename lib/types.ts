@@ -3,6 +3,12 @@ export interface RoomConfig {
   childAges: number[]
 }
 
+export interface SearchFilters {
+  meal_types?: string[]
+  stars_gte?: number
+  free_cancellation?: boolean
+}
+
 export interface RateHawkHotelSearchParams {
   destination: string
   destinationType?: string
@@ -16,6 +22,7 @@ export interface RateHawkHotelSearchParams {
   residency?: string
   offset?: number
   batchSize?: number
+  filters?: SearchFilters
 }
 
 export interface RateHawkHotel {

@@ -58,6 +58,9 @@ interface Room {
   cancellation_penalties: any
   tax_data: { taxes?: TaxEntry[] } | null
   amenities: string[]
+  allotment: number
+  non_free_amenities?: string[]
+  keys_pickup_instructions?: string | null
   capacity: number
   size_sqm: number | null
   view: string | null

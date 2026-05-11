@@ -21,6 +21,7 @@ interface Room {
   cancellation_penalties: any
   tax_data: { taxes?: TaxEntry[] } | null
   amenities: string[]
+  allotment: number
   capacity: number
   size_sqm: number | null
   view: string | null
@@ -497,7 +498,14 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                                 {/* Rominfo + pris rad */}
                                 <div className="flex flex-col sm:flex-row gap-4">
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-[var(--deep)] text-sm">{room.room_name}</h4>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className="font-semibold text-[var(--deep)] text-sm">{room.room_name}</h4>
+                                      {room.allotment >= 2 && room.allotment <= 5 && (
+                                        <span className="text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full animate-pulse">
+                                          Kun {room.allotment} igjen!
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="flex flex-wrap gap-2 mt-2">
                                       {mealLabel && (
                                         <span className="text-[11px] font-medium bg-green-50 text-green-700 px-2.5 py-1 rounded-full">

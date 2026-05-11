@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 
+export type UserRole = 'admin' | 'support'
+
 export interface UserRecord {
   id: string
   email: string
@@ -7,6 +9,7 @@ export interface UserRecord {
   firstName?: string | null
   lastName?: string | null
   phone?: string | null
+  role: UserRole
   createdAt: string
 }
 
@@ -32,6 +35,9 @@ export interface BookingRecord {
   ratehawkOrderId?: number | null
   status: string
   cancellationInfo?: string | null
+  hotelAddress?: string | null
+  cancellationPolicy?: string | null
+  prebookData?: Record<string, unknown> | null
   createdAt: string
 }
 
@@ -44,6 +50,7 @@ export async function createUser(params: {
   firstName?: string
   lastName?: string
   phone?: string
+  role?: UserRole
 }): Promise<UserRecord | null> {
   const { data, error } = await supabase
     .from('users')
@@ -54,10 +61,49 @@ export async function createUser(params: {
       first_name: params.firstName ?? null,
       last_name: params.lastName ?? null,
       phone: params.phone ?? null,
+      role: params.role ?? 'support',
     })
     .select()
     .single()
 
+  if (error) return null
+  return mapUserRow(data)
+}
+
+export async function getAllUsers(): Promise<UserRecord[]> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, email, first_name, last_name, role, created_at')
+    .order('created_at', { ascending: false })
+  if (error || !data) return []
+  return data.map(mapUserRow)
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  await supabase.from('users').delete().eq('id', id)
+}
+
+export async function upsertUser(params: {
+  email: string
+  passwordHash: string
+  firstName?: string
+  lastName?: string
+  role: UserRole
+}): Promise<UserRecord | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .upsert(
+      {
+        email: params.email.toLowerCase().trim(),
+        password_hash: params.passwordHash,
+        first_name: params.firstName ?? null,
+        last_name: params.lastName ?? null,
+        role: params.role,
+      },
+      { onConflict: 'email' }
+    )
+    .select()
+    .single()
   if (error) return null
   return mapUserRow(data)
 }
@@ -92,6 +138,7 @@ function mapUserRow(row: Record<string, unknown>): UserRecord {
     firstName: (row.first_name as string | null) ?? null,
     lastName: (row.last_name as string | null) ?? null,
     phone: (row.phone as string | null) ?? null,
+    role: ((row.role as string | null) ?? 'support') as UserRole,
     createdAt: row.created_at as string,
   }
 }
@@ -125,6 +172,9 @@ export async function createBooking(
       ratehawk_order_id: params.ratehawkOrderId ?? null,
       status: params.status,
       cancellation_info: params.cancellationInfo ?? null,
+      hotel_address: params.hotelAddress ?? null,
+      cancellation_policy: params.cancellationPolicy ?? null,
+      prebook_data: params.prebookData ?? null,
     })
     .select()
     .single()
@@ -223,6 +273,65 @@ function mapBookingRow(row: Record<string, unknown>): BookingRecord {
     ratehawkOrderId: (row.ratehawk_order_id as number | null) ?? null,
     status: row.status as string,
     cancellationInfo: (row.cancellation_info as string | null) ?? null,
+    hotelAddress: (row.hotel_address as string | null) ?? null,
+    cancellationPolicy: (row.cancellation_policy as string | null) ?? null,
+    prebookData: (row.prebook_data as Record<string, unknown> | null) ?? null,
     createdAt: row.created_at as string,
+  }
+}
+
+// --- Admin queries ---
+
+export async function getAllBookings(opts?: {
+  search?: string
+  status?: string
+  limit?: number
+  offset?: number
+}): Promise<{ bookings: BookingRecord[]; total: number }> {
+  const limit = opts?.limit ?? 50
+  const offset = opts?.offset ?? 0
+
+  let query = supabase
+    .from('bookings')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (opts?.status && opts.status !== 'all') {
+    query = query.eq('status', opts.status)
+  }
+
+  if (opts?.search) {
+    const s = opts.search.trim()
+    query = query.or(
+      `partner_order_id.ilike.%${s}%,guest_email.ilike.%${s}%,hotel_name.ilike.%${s}%,guest_first_name.ilike.%${s}%,guest_last_name.ilike.%${s}%`
+    )
+  }
+
+  const { data, error, count } = await query
+  if (error || !data) return { bookings: [], total: 0 }
+  return { bookings: data.map(mapBookingRow), total: count ?? 0 }
+}
+
+export async function getBookingStats(): Promise<{
+  total: number
+  confirmed: number
+  pending: number
+  cancelled: number
+  failed: number
+  revenue: number
+}> {
+  const { data } = await supabase.from('bookings').select('status, amount')
+  if (!data) return { total: 0, confirmed: 0, pending: 0, cancelled: 0, failed: 0, revenue: 0 }
+
+  return {
+    total: data.length,
+    confirmed: data.filter(b => b.status === 'confirmed').length,
+    pending: data.filter(b => ['pending', 'in_progress'].includes(b.status as string)).length,
+    cancelled: data.filter(b => b.status === 'cancelled').length,
+    failed: data.filter(b => b.status === 'failed').length,
+    revenue: data
+      .filter(b => b.status === 'confirmed' && b.amount)
+      .reduce((sum, b) => sum + ((b.amount as number) || 0), 0),
   }
 }

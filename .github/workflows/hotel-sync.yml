@@ -14,6 +14,7 @@ on:
         options:
           - incremental
           - full
+          - backfill
           - status
 
 jobs:
@@ -59,7 +60,11 @@ jobs:
         run: |
           MODE="${{ github.event.inputs.mode || 'incremental' }}"
           echo "Running $MODE sync..."
-          npx tsx scripts/sync-hotels.ts "$MODE"
+          if [ "$MODE" = "backfill" ]; then
+            npx tsx scripts/backfill-city-country.ts
+          else
+            npx tsx scripts/sync-hotels.ts "$MODE"
+          fi
 
       - name: Save SQLite database cache
         if: always()

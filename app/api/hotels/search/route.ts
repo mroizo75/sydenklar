@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ratehawkClient } from '@/lib/ratehawk-client'
-import { RateHawkHotelSearchParams } from '@/lib/types'
+import { RateHawkHotelSearchParams, SearchFilters } from '@/lib/types'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
     const userCountry: string | null = body.residency || 'no'
+
+    const filters: SearchFilters | undefined = body.filters && typeof body.filters === 'object'
+      ? body.filters
+      : undefined
 
     const params: RateHawkHotelSearchParams = {
       destination: body.destination,
@@ -17,7 +21,8 @@ export async function POST(request: NextRequest) {
       children: Array.isArray(body.children) ? body.children : [],
       rooms: body.rooms || 1,
       roomConfigs: Array.isArray(body.roomConfigs) ? body.roomConfigs : undefined,
-      currency: body.currency || 'NOK'
+      currency: body.currency || 'NOK',
+      ...(filters ? { filters } : {}),
     }
 
     const result = await ratehawkClient.searchHotels(params, userCountry)

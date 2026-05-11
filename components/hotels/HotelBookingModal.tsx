@@ -35,6 +35,9 @@ interface Room {
   cancellation_penalties: any
   tax_data: any
   amenities: string[]
+  allotment: number
+  non_free_amenities?: string[]
+  keys_pickup_instructions?: string | null
   size_sqm: number | null
 }
 
@@ -395,6 +398,9 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
           roomCount: searchParams.roomCount ?? 1,
           amount: customerAmount,                 // kundepris → DB og e-post
           currency: confirmedPrice.currency,
+          upsellData: prebook?.upsell_data ?? null,
+          nonFreeAmenities: room.non_free_amenities ?? [],
+          keysPickupInstructions: room.keys_pickup_instructions ?? null,
           cancellationPolicy: (() => {
             const policies = room.cancellation_penalties?.policies
             if (!policies?.length) return undefined
@@ -469,10 +475,17 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={hotel.image} alt={hotel.name} className="w-full sm:w-20 h-32 sm:h-16 rounded-xl object-cover shrink-0" />
                 )}
-                <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-start gap-2">
+                  <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[var(--deep)] text-sm truncate">{hotel.name}</p>
-                    <p className="text-xs text-[var(--muted)] mt-0.5 truncate">{room.room_name}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <p className="text-xs text-[var(--muted)] truncate">{room.room_name}</p>
+                      {room.allotment >= 2 && room.allotment <= 5 && (
+                        <span className="text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded-full shrink-0">
+                          Kun {room.allotment} igjen!
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                       <span className="flex items-center gap-1 text-xs text-[var(--muted)]">
                         <Calendar size={11} />
@@ -612,6 +625,28 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
                   className={inputClass + " resize-none"}
                 />
               </div>
+
+              {room.non_free_amenities && room.non_free_amenities.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-amber-800 mb-2">Tillegg mot betaling</p>
+                  <p className="text-xs text-amber-700 mb-2">Følgende tjenester er ikke inkludert i prisen og betales direkte på hotellet:</p>
+                  <ul className="space-y-1">
+                    {room.non_free_amenities.map((amenity, i) => (
+                      <li key={i} className="flex items-center gap-1.5 text-xs text-amber-900">
+                        <span className="w-1 h-1 rounded-full bg-amber-500 shrink-0" />
+                        {amenity}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {room.keys_pickup_instructions && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-blue-800 mb-1.5">Nøkkelutlevering</p>
+                  <p className="text-xs text-blue-900 leading-relaxed">{room.keys_pickup_instructions}</p>
+                </div>
+              )}
 
               {error && (
                 <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">

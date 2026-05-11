@@ -36,10 +36,26 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}))
-  const type: string = body?.type === 'incremental' ? 'incremental' : 'full'
+  const rawType: string = body?.type ?? 'full'
+  const tsxBin = path.join(process.cwd(), 'node_modules', '.bin', 'tsx')
 
+  if (rawType === 'backfill') {
+    const scriptPath = path.join(process.cwd(), 'scripts', 'backfill-city-country.ts')
+    const child = spawn(tsxBin, [scriptPath], {
+      detached: true,
+      stdio: 'ignore',
+      env: { ...process.env },
+    })
+    child.unref()
+    return NextResponse.json({
+      started: true,
+      type: 'backfill',
+      message: 'Backfill av by/land startet i bakgrunnen (ca. 1 req/sek per hotell)',
+    })
+  }
+
+  const type: string = rawType === 'incremental' ? 'incremental' : 'full'
   const scriptPath = path.join(process.cwd(), 'scripts', 'sync-hotels.ts')
-  const tsxBin     = path.join(process.cwd(), 'node_modules', '.bin', 'tsx')
 
   const child = spawn(tsxBin, [scriptPath, type], {
     detached: true,

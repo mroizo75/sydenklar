@@ -90,7 +90,7 @@ async function CancelContent({ partnerOrderId }: { partnerOrderId: string }) {
         <h1 className="font-display text-3xl text-[var(--deep)] mb-2">Avbestill booking</h1>
         <p className="text-[var(--muted)] text-sm">
           Bestillingsnr.{' '}
-          <span className="font-mono font-semibold text-[var(--deep)]">{booking.partnerOrderId.slice(-8)}</span>
+          <span className="font-mono font-semibold text-[var(--deep)]">{booking.partnerOrderId}</span>
         </p>
       </div>
 

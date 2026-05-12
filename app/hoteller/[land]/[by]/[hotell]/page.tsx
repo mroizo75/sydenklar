@@ -88,6 +88,10 @@ export default async function HotellPage({ params }: Props) {
 
   const hotelSchema = buildHotelSchema(hotel, pageUrl)
 
+  const relatedHotels = hotels
+    .filter(h => slugify(h.id) !== hotell && (h.images ?? []).length > 0)
+    .slice(0, 6)
+
   const images = (hotel.images ?? []).slice(0, 6).map(img =>
     img.replace('{size}', '1024x768')
   )
@@ -250,6 +254,69 @@ export default async function HotellPage({ params }: Props) {
               </div>
             </div>
           </div>
+
+          {relatedHotels.length > 0 && (
+            <div className="mt-10">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-display text-2xl text-[var(--deep)]">
+                  Flere hoteller i {cityName}
+                </h2>
+                <Link
+                  href={`/hoteller/${land}/${by}`}
+                  className="text-sm text-[var(--sea)] hover:underline hidden sm:inline"
+                >
+                  Se alle →
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {relatedHotels.map(h => {
+                  const thumb = (h.images?.[0] ?? '').replace('{size}', '640x480')
+                  const hStars = h.star_rating ? Math.round(h.star_rating) : 0
+                  const hSlug = slugify(h.id)
+                  return (
+                    <Link
+                      key={h.id}
+                      href={`/hoteller/${land}/${by}/${hSlug}`}
+                      className="group bg-white rounded-2xl border border-[var(--border)] overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="relative w-full aspect-[4/3] bg-[var(--sand)]">
+                        {thumb && (
+                          <Image
+                            src={thumb}
+                            alt={h.name ?? ''}
+                            fill
+                            className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          />
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <p className="font-medium text-[var(--deep)] line-clamp-1 mb-1">
+                          {h.name}
+                        </p>
+                        {hStars > 0 && (
+                          <p className="text-[var(--gold)] text-xs tracking-wider">
+                            {'★'.repeat(hStars)}{'☆'.repeat(Math.max(0, 5 - hStars))}
+                          </p>
+                        )}
+                        {h.address && (
+                          <p className="text-[var(--muted)] text-xs mt-1 line-clamp-1">{h.address}</p>
+                        )}
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+              <div className="mt-5 text-center sm:hidden">
+                <Link
+                  href={`/hoteller/${land}/${by}`}
+                  className="text-sm text-[var(--sea)] hover:underline"
+                >
+                  Se alle hoteller i {cityName} →
+                </Link>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <Link

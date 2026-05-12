@@ -3,6 +3,8 @@ import { ratehawkClient } from '@/lib/ratehawk-client'
 import { updateBookingStatus, getBookingByPartnerOrderId } from '@/lib/users-db'
 import { auth } from '@/lib/auth'
 import { stripe } from '@/lib/stripe'
+import { verifyCancelToken } from '@/lib/cancel-token'
+import { sendCancellationConfirmationEmail } from '@/lib/email'
 
 const ZERO_DECIMAL_CURRENCIES = new Set([
   'bif','clp','djf','gnf','jpy','kmf','krw','mga','pyg','rwf','ugx','vnd','vuv','xaf','xof','xpf',
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     const body = await request.json()
-    const { partnerOrderId } = body
+    const { partnerOrderId, cancelToken } = body
 
     if (!partnerOrderId) {
       return NextResponse.json({ success: false, error: 'Mangler bestillingsnummer' }, { status: 400 })
@@ -51,9 +53,9 @@ export async function POST(request: NextRequest) {
 
     const userId = (session?.user as { id?: string })?.id ?? null
     const isOwner = userId && booking.userId === userId
-    const isGuest = !session?.user
+    const isValidToken = !session?.user && cancelToken && verifyCancelToken(partnerOrderId, cancelToken)
 
-    if (!isOwner && !isGuest) {
+    if (!isOwner && !isValidToken) {
       return NextResponse.json({ success: false, error: 'Ikke autorisert' }, { status: 403 })
     }
 
@@ -67,15 +69,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: result.error || 'Kansellering feilet' }, { status: 500 })
     }
 
-    await updateBookingStatus(partnerOrderId, 'cancelled')
-
     // Stripe-refundering
     let refundId: string | null = null
+    let refundAmount = 0
     let refundError: string | null = null
 
     if (booking.stripePaymentId && booking.amount) {
       try {
-        const refundAmount = calcRefundAmount(
+        refundAmount = calcRefundAmount(
           result.amountPayable ?? null,
           result.amountSell ?? null,
           booking.amount,
@@ -104,6 +105,26 @@ export async function POST(request: NextRequest) {
         refundError = err.message ?? 'Stripe-refundering feilet'
       }
     }
+
+    await updateBookingStatus(
+      partnerOrderId,
+      'cancelled',
+      undefined,
+      undefined,
+      refundId ? { stripeRefundId: refundId, refundedAmount: refundAmount } : undefined,
+    )
+
+    sendCancellationConfirmationEmail({
+      to: booking.guestEmail,
+      guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
+      hotelName: booking.hotelName ?? 'Hotell',
+      checkIn: booking.checkIn ?? '',
+      checkOut: booking.checkOut ?? '',
+      partnerOrderId,
+      paidAmount: booking.amount ?? 0,
+      refundedAmount: refundId ? refundAmount : 0,
+      currency: booking.currency ?? 'NOK',
+    })
 
     return NextResponse.json({
       success: true,

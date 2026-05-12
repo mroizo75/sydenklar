@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-  searchParams: Promise<{ ref?: string }>
+  searchParams: Promise<{ ref?: string; token?: string }>
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -25,7 +25,7 @@ function formatDate(dateStr: string | null | undefined): string {
   })
 }
 
-async function CancelContent({ partnerOrderId }: { partnerOrderId: string }) {
+async function CancelContent({ partnerOrderId, cancelToken }: { partnerOrderId: string; cancelToken?: string }) {
   const booking = await getBookingByPartnerOrderId(partnerOrderId)
 
   if (!booking) {
@@ -99,7 +99,8 @@ async function CancelContent({ partnerOrderId }: { partnerOrderId: string }) {
         hotelName={booking.hotelName ?? 'Hotell'}
         checkIn={formatDate(booking.checkIn)}
         checkOut={formatDate(booking.checkOut)}
-        cancellationPolicy={booking.cancellationInfo ?? null}
+        cancellationPolicy={booking.cancellationPolicy ?? booking.cancellationInfo ?? null}
+        cancelToken={cancelToken}
       />
     </div>
   )
@@ -108,6 +109,7 @@ async function CancelContent({ partnerOrderId }: { partnerOrderId: string }) {
 export default async function AvbestillPage({ searchParams }: PageProps) {
   const params = await searchParams
   const ref = params?.ref
+  const token = params?.token
 
   return (
     <>
@@ -119,7 +121,7 @@ export default async function AvbestillPage({ searchParams }: PageProps) {
           </div>
         }>
           {ref ? (
-            <CancelContent partnerOrderId={ref} />
+            <CancelContent partnerOrderId={ref} cancelToken={token} />
           ) : (
             <div className="max-w-lg mx-auto text-center py-16 px-6">
               <h1 className="font-display text-3xl text-[var(--deep)] mb-4">Avbestill booking</h1>

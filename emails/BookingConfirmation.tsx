@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { generateCancelToken } from '@/lib/cancel-token'
 
 export interface BookingConfirmationProps {
   guestName: string
@@ -33,7 +34,8 @@ export function BookingConfirmationEmail({
 }: BookingConfirmationProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sydenklar.no'
   const confirmationUrl = `${baseUrl}/booking-bekreftelse?ref=${partnerOrderId}`
-  const cancelUrl = `${baseUrl}/avbestill?ref=${partnerOrderId}`
+  const cancelToken = generateCancelToken(partnerOrderId)
+  const cancelUrl = `${baseUrl}/avbestill?ref=${partnerOrderId}&token=${cancelToken}`
 
   const formattedAmount = new Intl.NumberFormat('nb-NO', {
     style: 'currency',

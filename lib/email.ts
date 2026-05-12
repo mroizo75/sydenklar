@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { render } from '@react-email/render'
 import { BookingConfirmationEmail, type BookingConfirmationProps } from '@/emails/BookingConfirmation'
+import { CancellationConfirmationEmail } from '@/emails/CancellationConfirmation'
 
 function getResend(): Resend {
   const key = process.env.RESEND_API_KEY
@@ -91,6 +92,33 @@ export async function sendPaymentLinkEmail(params: {
   } catch (error: unknown) {
     const err = error as { message?: string }
     console.error('[email] Kunne ikke sende betalingslink-e-post:', err.message)
+  }
+}
+
+export async function sendCancellationConfirmationEmail(params: {
+  to: string
+  guestName: string
+  hotelName: string
+  checkIn: string
+  checkOut: string
+  partnerOrderId: string
+  paidAmount: number
+  refundedAmount: number
+  currency: string
+}): Promise<void> {
+  try {
+    const resend = getResend()
+    const html = await render(CancellationConfirmationEmail(params))
+
+    await resend.emails.send({
+      from: `Sydenklar.no <${FROM}>`,
+      to: params.to,
+      subject: `Avbestillingsbekreftelse – ${params.hotelName} (${params.partnerOrderId})`,
+      html,
+    })
+  } catch (error: unknown) {
+    const err = error as { message?: string }
+    console.error('[email] Kunne ikke sende avbestillingsbekreftelse:', err.message)
   }
 }
 

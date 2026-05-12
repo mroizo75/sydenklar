@@ -9,6 +9,7 @@ interface CancelFormProps {
   checkIn: string
   checkOut: string
   cancellationPolicy: string | null
+  cancelToken?: string
 }
 
 export default function CancelForm({
@@ -17,6 +18,7 @@ export default function CancelForm({
   checkIn,
   checkOut,
   cancellationPolicy,
+  cancelToken,
 }: CancelFormProps) {
   const router = useRouter()
   const [step, setStep] = useState<'confirm' | 'loading' | 'success' | 'error'>('confirm')
@@ -28,7 +30,7 @@ export default function CancelForm({
       const res = await fetch('/api/hotels/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partnerOrderId }),
+        body: JSON.stringify({ partnerOrderId, cancelToken }),
       })
       const data = await res.json()
       if (data.success) {

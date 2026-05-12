@@ -32,6 +32,8 @@ export interface BookingRecord {
   amount?: number | null
   currency?: string | null
   stripePaymentId?: string | null
+  stripeRefundId?: string | null
+  refundedAmount?: number | null
   ratehawkOrderId?: number | null
   status: string
   cancellationInfo?: string | null
@@ -188,10 +190,15 @@ export async function updateBookingStatus(
   status: string,
   ratehawkOrderId?: number,
   stripePaymentId?: string,
+  refundData?: { stripeRefundId: string; refundedAmount: number },
 ): Promise<void> {
   const update: Record<string, unknown> = { status }
   if (ratehawkOrderId !== undefined) update.ratehawk_order_id = ratehawkOrderId
   if (stripePaymentId !== undefined) update.stripe_payment_id = stripePaymentId
+  if (refundData) {
+    update.stripe_refund_id = refundData.stripeRefundId
+    update.refunded_amount = refundData.refundedAmount
+  }
 
   await supabase
     .from('bookings')
@@ -270,6 +277,8 @@ function mapBookingRow(row: Record<string, unknown>): BookingRecord {
     amount: (row.amount as number | null) ?? null,
     currency: (row.currency as string | null) ?? null,
     stripePaymentId: (row.stripe_payment_id as string | null) ?? null,
+    stripeRefundId: (row.stripe_refund_id as string | null) ?? null,
+    refundedAmount: (row.refunded_amount as number | null) ?? null,
     ratehawkOrderId: (row.ratehawk_order_id as number | null) ?? null,
     status: row.status as string,
     cancellationInfo: (row.cancellation_info as string | null) ?? null,

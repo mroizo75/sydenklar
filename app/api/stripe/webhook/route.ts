@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyWebhookSignature } from '@/lib/stripe'
-import { updateBookingStatus } from '@/lib/users-db'
+import { updateBookingStatus, getBookingByPartnerOrderId } from '@/lib/users-db'
 import type Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
@@ -23,7 +23,14 @@ export async function POST(request: NextRequest) {
       const pi = event.data.object as Stripe.PaymentIntent
       const partnerOrderId = pi.metadata?.partner_order_id
       if (partnerOrderId) {
-        await updateBookingStatus(partnerOrderId, 'paid', undefined, pi.id)
+        const booking = await getBookingByPartnerOrderId(partnerOrderId)
+        // Ikke overskriv confirmed/cancelled — RateHawk-flyten har allerede satt riktig status
+        const protectedStatuses = new Set(['confirmed', 'cancelled', 'failed'])
+        if (booking && !protectedStatuses.has(booking.status)) {
+          await updateBookingStatus(partnerOrderId, 'paid', undefined, pi.id)
+        } else if (!booking) {
+          await updateBookingStatus(partnerOrderId, 'paid', undefined, pi.id)
+        }
       }
       break
     }
@@ -31,7 +38,13 @@ export async function POST(request: NextRequest) {
       const pi = event.data.object as Stripe.PaymentIntent
       const partnerOrderId = pi.metadata?.partner_order_id
       if (partnerOrderId) {
-        await updateBookingStatus(partnerOrderId, 'payment_failed', undefined, pi.id)
+        const booking = await getBookingByPartnerOrderId(partnerOrderId)
+        const protectedStatuses = new Set(['confirmed', 'cancelled'])
+        if (booking && !protectedStatuses.has(booking.status)) {
+          await updateBookingStatus(partnerOrderId, 'payment_failed', undefined, pi.id)
+        } else if (!booking) {
+          await updateBookingStatus(partnerOrderId, 'payment_failed', undefined, pi.id)
+        }
       }
       break
     }

@@ -49,6 +49,31 @@ function HotellPageContent() {
   const [selectedHotel, setSelectedHotel] = useState<RateHawkHotel | null>(null)
   const [bookingRoom, setBookingRoom] = useState<any | null>(null)
   const [bookingHotel, setBookingHotel] = useState<any | null>(null)
+  const [searchTimestamp, setSearchTimestamp] = useState<number | null>(null)
+  const [searchExpired, setSearchExpired] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
+
+  const SEARCH_TTL_S = 25 * 60 // 25 min — varsler litt før RateHawk-cachen (30 min) løper ut
+
+  useEffect(() => {
+    if (!searchTimestamp) return
+    setSearchExpired(false)
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - searchTimestamp) / 1000)
+      const left = SEARCH_TTL_S - elapsed
+      if (left <= 0) {
+        setSecondsLeft(0)
+        setSearchExpired(true)
+        clearInterval(interval)
+      } else {
+        setSecondsLeft(left)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTimestamp])
 
   const handleSearch = useCallback(async (data: SearchState) => {
     setLoading(true)
@@ -87,6 +112,9 @@ function HotellPageContent() {
           searchId: result.searchId || "",
           hasMore: !!result.hasMore,
         })
+        setSearchTimestamp(Date.now())
+        setSearchExpired(false)
+        setSecondsLeft(SEARCH_TTL_S)
         // Auto-åpne hotell fra URL-parameter (fra "Beste tilbud"-kort)
         if (urlHotelNavn) {
           const needle = urlHotelNavn.toLowerCase()
@@ -247,6 +275,44 @@ function HotellPageContent() {
         )}
 
         {/* Resultater: split-screen, HotelResults håndterer eget layout */}
+        {/* Søkeutløps-banner */}
+        {results && !loading && secondsLeft !== null && (
+          <div className={`sticky top-0 z-30 transition-colors ${searchExpired ? "bg-red-600" : secondsLeft < 5 * 60 ? "bg-amber-500" : "bg-[var(--deep)]"}`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-4">
+              {searchExpired ? (
+                <>
+                  <p className="text-white text-sm font-medium">
+                    ⏰ Søket ditt har utløpt — prisene kan ha endret seg.
+                  </p>
+                  <button
+                    onClick={() => searchState && handleSearch(searchState)}
+                    className="shrink-0 bg-white text-red-600 font-semibold text-xs px-4 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    Søk på nytt
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-white/80 text-xs">
+                    {secondsLeft < 5 * 60
+                      ? `⚠️ Prisene utløper om ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")} — fullfør bestillingen snart.`
+                      : `Prisene er gyldige i ${Math.floor(secondsLeft / 60)} min ${String(secondsLeft % 60).padStart(2, "0")} sek`
+                    }
+                  </p>
+                  {secondsLeft < 5 * 60 && (
+                    <button
+                      onClick={() => searchState && handleSearch(searchState)}
+                      className="shrink-0 bg-white/20 hover:bg-white/30 text-white font-semibold text-xs px-4 py-1.5 rounded-lg transition-colors"
+                    >
+                      Oppdater søk
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {results && !loading && searchState && results.hotels.length > 0 && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <HotelResults
@@ -288,8 +354,8 @@ function HotellPageContent() {
       {/* Hotel detail modal */}
       {selectedHotel && searchState && (
         <HotelDetailModal
-          hotelId={selectedHotel.id}
-          hid={undefined}
+          hotelId={selectedHotel.hid ? undefined : selectedHotel.id}
+          hid={selectedHotel.hid}
           hotelName={selectedHotel.name}
           searchParams={{
             checkIn: searchState.checkIn,

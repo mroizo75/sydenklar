@@ -134,16 +134,30 @@ function getAmenityIcon(name: string): React.ReactNode {
 
 const MEAL_LABELS: Record<string, string> = {
   "all-inclusive": "Alt inklusiv",
+  "super-all-inclusive": "Super all inclusive",
+  "soft-all-inclusive": "Soft all inclusive",
+  "ultra-all-inclusive": "Ultra all inclusive",
   "breakfast": "Frokost inkludert",
   "breakfast-buffet": "Frokostbuffet",
   "continental-breakfast": "Kontinental frokost",
+  "english-breakfast": "Engelsk frokost",
+  "american-breakfast": "Amerikansk frokost",
+  "asian-breakfast": "Asiatisk frokost",
+  "chinese-breakfast": "Kinesisk frokost",
+  "israeli-breakfast": "Israelsk frokost",
+  "japanese-breakfast": "Japansk frokost",
+  "scandinavian-breakfast": "Skandinavisk frokost",
+  "scottish-breakfast": "Skotsk frokost",
+  "breakfast-for-1": "Frokost for 1 gjest",
+  "breakfast-for-2": "Frokost for 2 gjester",
   "dinner": "Middag inkludert",
   "full-board": "Helpensjon",
   "half-board": "Halvpensjon",
+  "half-board-lunch": "Halvpensjon med lunsj",
+  "half-board-dinner": "Halvpensjon med middag",
   "lunch": "Lunsj inkludert",
   "nomeal": "Kun rom",
-  "english-breakfast": "Engelsk frokost",
-  "scandinavian-breakfast": "Skandinavisk frokost",
+  "some-meal": "Some meal",
 }
 
 function getMealLabel(meal: any): string {
@@ -434,6 +448,7 @@ function HotellInfoContent() {
   const urlCheckIn = searchParams.get("checkIn") || ""
   const urlCheckOut = searchParams.get("checkOut") || ""
   const urlAdults = Number(searchParams.get("adults") || "2")
+  const urlResidency = searchParams.get("residency") || "no"
 
   const [info, setInfo] = useState<HotelInfo | null>(null)
   const [infoLoading, setInfoLoading] = useState(true)
@@ -486,7 +501,7 @@ function HotellInfoContent() {
           adults,
           children: [],
           currency: "NOK",
-          residency: "no",
+          residency: urlResidency,
         }),
       })
       const data = await res.json()

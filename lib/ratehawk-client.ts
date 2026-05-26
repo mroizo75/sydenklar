@@ -101,21 +101,22 @@ class RateHawkClient {
   }
 
   private getUserResidency(userCountry?: string | null): string {
+    if (!userCountry) return 'no'
+    const normalized = userCountry.toLowerCase().trim()
+    // Pass through any 2-letter ISO 3166-1 alpha-2 code directly
+    if (/^[a-z]{2}$/.test(normalized)) return normalized
+    // Full-name fallback map
     const countryMap: Record<string, string> = {
-      'norway': 'no', 'norge': 'no', 'no': 'no',
-      'sweden': 'se', 'sverige': 'se', 'se': 'se',
-      'denmark': 'dk', 'danmark': 'dk', 'dk': 'dk',
-      'fi': 'fi',
-      'united states': 'us', 'usa': 'us', 'us': 'us',
-      'united kingdom': 'gb', 'uk': 'gb', 'gb': 'gb',
-      'germany': 'de', 'tyskland': 'de', 'de': 'de',
-      'france': 'fr', 'frankrike': 'fr', 'fr': 'fr',
+      'norway': 'no', 'norge': 'no',
+      'sweden': 'se', 'sverige': 'se',
+      'denmark': 'dk', 'danmark': 'dk',
+      'finland': 'fi', 'finland': 'fi',
+      'united states': 'us', 'usa': 'us',
+      'united kingdom': 'gb', 'uk': 'gb',
+      'germany': 'de', 'tyskland': 'de',
+      'france': 'fr', 'frankrike': 'fr',
     }
-    if (userCountry) {
-      const normalized = userCountry.toLowerCase().trim()
-      return countryMap[normalized] || 'no'
-    }
-    return 'no'
+    return countryMap[normalized] || 'no'
   }
 
   async searchHotels(params: RateHawkHotelSearchParams, userCountry?: string | null): Promise<RateHawkHotelSearchResponse> {
@@ -372,8 +373,11 @@ class RateHawkClient {
             return hasFreePeriod
           })()
 
+          const rawHid = typeof hotel.hid === 'number' ? hotel.hid : (typeof hotel.id === 'number' ? hotel.id : undefined)
+
           return {
             id: hotelId?.toString() || '',
+            hid: rawHid,
             name: hotelName,
             address: hotelAddress,
             rating: starRating,

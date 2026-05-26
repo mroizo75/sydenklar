@@ -12,6 +12,9 @@ import {
 import { WeeklyNewsletterEmail } from '@/emails/WeeklyNewsletter'
 import type { NewsletterHotel, NewsletterDestination } from '@/emails/WeeklyNewsletter'
 
+// Fetch up to `limit` hotels; cycle the offset by week so content rotates
+
+
 const resend = new Resend(process.env.RESEND_API_KEY)
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sydenklar.no'
 const FROM = process.env.RESEND_FROM || 'booking@sydenklar.no'
@@ -108,7 +111,7 @@ export async function POST(req: NextRequest) {
       hotelCount: city.count,
       pageUrl: buildCityUrl(country, city.slug),
     }
-    hotels = fetchHotelsForCity(country, city.city_name, 3, weekNumber)
+    hotels = fetchHotelsForCity(country, city.city_name, 4, weekNumber)
   } else {
     // Chosen country has no DB data — fall back to best available country
     const allCountries = getCountriesWithCounts()
@@ -124,7 +127,7 @@ export async function POST(req: NextRequest) {
           hotelCount: fallbackCity.count,
           pageUrl: buildCityUrl(activeCountry, fallbackCity.slug),
         }
-        hotels = fetchHotelsForCity(activeCountry, fallbackCity.city_name, 3, weekNumber)
+        hotels = fetchHotelsForCity(activeCountry, fallbackCity.city_name, 4, weekNumber)
       } else {
         destination = {
           cityName: 'Reisemål',
@@ -144,14 +147,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Fill remaining slots from top countries if still short
-  if (hotels.length < 3) {
+  if (hotels.length < 4) {
     const allCountries = getCountriesWithCounts()
     for (const c of allCountries) {
-      if (hotels.length >= 3) break
+      if (hotels.length >= 4) break
       if (c.country_name === activeCountry) continue
       const topCity = getCitiesByCountry(c.country_name)[0]
       if (!topCity) continue
-      const fill = getHotelsByCity(c.country_name, topCity.city_name, 3 - hotels.length)
+      const fill = getHotelsByCity(c.country_name, topCity.city_name, 4 - hotels.length)
       fill.forEach(h => hotels.push(mapHotel(h)))
     }
   }
@@ -186,6 +189,7 @@ export async function POST(req: NextRequest) {
               year,
               hotels,
               destination,
+              // trendingDests and travelTip are auto-generated from weekNumber in the template
               unsubscribeUrl,
               baseUrl: BASE_URL,
             })
@@ -194,7 +198,7 @@ export async function POST(req: NextRequest) {
           await resend.emails.send({
             from: `Sydenklar <${FROM}>`,
             to: sub.email,
-            subject: `✈️ Ukens reiseinspirasjon – ${destination.cityName} (uke ${weekNumber})`,
+            subject: `✈️ ${destination.cityName} kaller — ukens beste hoteller er her!`,
             html,
           })
           sent++

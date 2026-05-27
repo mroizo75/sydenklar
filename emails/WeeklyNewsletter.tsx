@@ -224,7 +224,6 @@ export function WeeklyNewsletterEmail({
         backgroundColor: '#F3F4F6',
         fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
         WebkitTextSizeAdjust: '100%',
-        msoLineHeightRule: 'exactly' as any,
       }}>
 
         <table width="100%" cellPadding="0" cellSpacing="0" role="presentation"

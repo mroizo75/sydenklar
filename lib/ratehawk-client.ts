@@ -110,7 +110,7 @@ class RateHawkClient {
       'norway': 'no', 'norge': 'no',
       'sweden': 'se', 'sverige': 'se',
       'denmark': 'dk', 'danmark': 'dk',
-      'finland': 'fi', 'finland': 'fi',
+      'finland': 'fi', 'suomi': 'fi',
       'united states': 'us', 'usa': 'us',
       'united kingdom': 'gb', 'uk': 'gb',
       'germany': 'de', 'tyskland': 'de',

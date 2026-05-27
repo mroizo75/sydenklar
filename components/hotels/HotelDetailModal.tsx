@@ -187,7 +187,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            hotelId: hid ? undefined : hotelId,
+            hotelId: (hid || !hotelId) ? undefined : hotelId,
             hid: hid,
             checkIn: searchParams.checkIn,
             checkOut: searchParams.checkOut,

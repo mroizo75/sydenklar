@@ -354,7 +354,7 @@ function HotellPageContent() {
       {/* Hotel detail modal */}
       {selectedHotel && searchState && (
         <HotelDetailModal
-          hotelId={selectedHotel.hid ? undefined : selectedHotel.id}
+          hotelId={selectedHotel.hid ? "" : selectedHotel.id}
           hid={selectedHotel.hid}
           hotelName={selectedHotel.name}
           searchParams={{

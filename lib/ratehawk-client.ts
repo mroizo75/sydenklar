@@ -933,91 +933,28 @@ class RateHawkClient {
               })
             }
 
-            const normalizeName = (s: string) => s.toLowerCase().replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim()
             let matchedGroup: any | undefined
 
             if (groupById.size > 0) {
               const re = rate.rg_ext
 
-              if (re) {
-                // 2a. rg_ext exact match (class+bedding+bathroom+quality) WITH photos
-                if (!matchedGroup) {
-                  for (const g of groupById.values()) {
-                    if (g.photos.length === 0) continue
-                    if (g.rg_ext.class === re.class && g.rg_ext.bedding === re.bedding &&
-                        g.rg_ext.bathroom === re.bathroom && g.rg_ext.quality === re.quality) {
-                      matchedGroup = g; break
-                    }
-                  }
-                }
-
-                // 2b. rg_ext without quality WITH photos
-                if (!matchedGroup) {
-                  for (const g of groupById.values()) {
-                    if (g.photos.length === 0) continue
-                    if (g.rg_ext.class === re.class && g.rg_ext.bedding === re.bedding &&
-                        g.rg_ext.bathroom === re.bathroom) {
-                      matchedGroup = g; break
-                    }
-                  }
-                }
-
-                // 2c. rg_ext without bathroom WITH photos
-                if (!matchedGroup) {
-                  for (const g of groupById.values()) {
-                    if (g.photos.length === 0) continue
-                    if (g.rg_ext.class === re.class && g.rg_ext.bedding === re.bedding) {
-                      matchedGroup = g; break
-                    }
-                  }
-                }
-
-                // 2d. rg_ext exact match WITHOUT photo requirement (size/view metadata)
-                if (!matchedGroup) {
-                  for (const g of groupById.values()) {
-                    if (g.rg_ext.class === re.class && g.rg_ext.bedding === re.bedding &&
-                        g.rg_ext.bathroom === re.bathroom && g.rg_ext.quality === re.quality) {
-                      matchedGroup = g; break
-                    }
-                  }
-                }
-
-                // 2e. rg_ext without quality, no photo requirement
-                if (!matchedGroup) {
-                  for (const g of groupById.values()) {
-                    if (g.rg_ext.class === re.class && g.rg_ext.bedding === re.bedding &&
-                        g.rg_ext.bathroom === re.bathroom) {
-                      matchedGroup = g; break
-                    }
+              // Strict all-field rg_ext match: every key present in the rate's rg_ext must
+              // equal the corresponding key in the static group's rg_ext. This covers all 12
+              // rg_ext parameters simultaneously as required by ETG certification policy.
+              if (re && typeof re === 'object') {
+                const reKeys = Object.keys(re) as (keyof typeof re)[]
+                for (const g of groupById.values()) {
+                  const ge = g.rg_ext || {}
+                  if (reKeys.every((k) => re[k] === ge[k])) {
+                    matchedGroup = g
+                    break
                   }
                 }
               }
 
-              // 2f. Direct room_group_id match
+              // Secondary fallback: direct room_group_id match (no name-based fallback per ETG policy)
               if (!matchedGroup && rate.room_group_id !== undefined) {
                 matchedGroup = groupById.get(Number(rate.room_group_id))
-              }
-
-              // 2g. Exact normalised name match
-              if (!matchedGroup) {
-                const rateName = normalizeName(rate.room_data_trans?.main_name || rate.room_name || '')
-                const rateType = normalizeName(rate.room_data_trans?.main_room_type || '')
-                for (const g of groupById.values()) {
-                  const gNorm = normalizeName(g.name)
-                  if (gNorm === rateName || gNorm === rateType) { matchedGroup = g; break }
-                }
-              }
-
-              // 2h. Prefix/contains name match
-              if (!matchedGroup) {
-                const rateName = normalizeName(rate.room_data_trans?.main_name || rate.room_name || '')
-                const rateType = normalizeName(rate.room_data_trans?.main_room_type || '')
-                for (const g of groupById.values()) {
-                  const gNorm = normalizeName(g.name)
-                  if (gNorm.length > 3 && (rateName.startsWith(gNorm) || rateType.startsWith(gNorm) || gNorm.startsWith(rateName))) {
-                    matchedGroup = g; break
-                  }
-                }
               }
             }
 
@@ -1183,48 +1120,58 @@ class RateHawkClient {
         throw new Error('RateHawk API credentials missing')
       }
 
+      // Step 1: /hotel/prebook/ — validates the rate and returns p- hash
+      const prebookData = await this.makeRequest('/hotel/prebook/', {
+        book_hash: params.bookHash,
+        price_increase_percent: 10,
+      }, 'POST')
+
+      if (prebookData?.status === 'error' && prebookData?.error === 'sandbox_restriction') {
+        return { success: false, error: 'Hotellbooking er ikke tilgjengelig i testmodus.' }
+      }
+
+      if (!prebookData?.data) {
+        throw new Error(prebookData?.error || 'Prebook failed')
+      }
+
+      const pHash: string = prebookData.data.book_hash || params.bookHash
+      const priceChanged: boolean = prebookData.data.price_changed ?? false
+      const prebookPaymentTypes = prebookData.data.payment_options ?? null
+
+      // Step 2: /hotel/order/booking/form/ — links the p- hash to our partner_order_id
       const now = new Date()
       const datePart = now.toISOString().slice(0, 10).replace(/-/g, '')
       const randPart = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(4, '0')
       const partnerOrderId = `SYD-${datePart}-${randPart}`
 
-      const requestParams = {
+      const formData = await this.makeRequest('/hotel/order/booking/form/', {
+        book_hash: pHash,
         partner_order_id: partnerOrderId,
-        book_hash: params.bookHash,
-        price_increase_percent: 10,
         language: 'en',
         currency: params.currency || 'NOK',
-        user_ip: '82.29.0.86'
+        user_ip: '82.29.0.86',
+      }, 'POST')
+
+      if (formData?.status === 'error' && formData?.error === 'sandbox_restriction') {
+        return { success: false, error: 'Hotellbooking er ikke tilgjengelig i testmodus.' }
       }
 
-      const data = await this.makeRequest('/hotel/order/booking/form/', requestParams, 'POST')
-
-      if (data?.status === 'error' && data?.error === 'sandbox_restriction') {
-        return {
-          success: false,
-          error: 'Hotellbooking er ikke tilgjengelig i testmodus.',
-        }
-      }
-
-      if (data?.data) {
-        // Ratehawk returnerer ny book_hash fra prebook. Hvis den mangler (f.eks. sandkasse),
-        // faller vi tilbake til den originale rate-hashen slik at finishBooking kan forsøkes.
-        const returnedBookHash: string = data.data.book_hash || params.bookHash
+      if (formData?.data) {
         return {
           success: true,
           data: {
-            book_hash: returnedBookHash,
-            partner_order_id: data.data.partner_order_id || partnerOrderId,
-            item_id: data.data.item_id,
-            order_id: data.data.order_id,
-            payment_types: data.data.payment_types,
-            price_changed: data.data.price_changed ?? false,
-            upsell_data: data.data.upsell_data
-          }
+            book_hash: formData.data.book_hash || pHash,
+            partner_order_id: formData.data.partner_order_id || partnerOrderId,
+            item_id: formData.data.item_id,
+            order_id: formData.data.order_id,
+            payment_types: formData.data.payment_types ?? prebookPaymentTypes,
+            price_changed: priceChanged,
+            upsell_data: formData.data.upsell_data,
+          },
         }
       }
 
-      throw new Error(data?.error || 'Booking form creation failed')
+      throw new Error(formData?.error || 'Booking form creation failed')
     } catch (error: any) {
       return { success: false, error: error.message || 'Failed to create booking form' }
     }

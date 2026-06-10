@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, Suspense } from "react"
+import { useState, useCallback, useEffect, useMemo, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
@@ -198,7 +198,11 @@ function HotellPageContent() {
   }, [urlDestination, urlDestinationId, urlResidency])
 
   const totalAdults = searchState?.roomConfigs.reduce((s, r) => s + r.adults, 0) || 2
-  const allChildren = searchState?.roomConfigs.flatMap(r => r.childAges) || []
+  const allChildren = useMemo(
+    () => searchState?.roomConfigs.flatMap(r => r.childAges) ?? [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(searchState?.roomConfigs)]
+  )
 
   const hasSearched = searchState !== null
 

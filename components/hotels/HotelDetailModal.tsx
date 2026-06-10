@@ -178,6 +178,10 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
   const [galleryIndex, setGalleryIndex] = useState(0)
   const [showGallery, setShowGallery] = useState(false)
 
+  // Stable string key derived from primitive searchParams values.
+  // Avoids re-fetching when the parent passes a new object reference with identical values.
+  const paramsKey = `${searchParams.checkIn}|${searchParams.checkOut}|${searchParams.adults}|${(searchParams.children || []).join(",")}|${searchParams.residency || "no"}`
+
   useEffect(() => {
     const fetchDetails = async () => {
       setLoading(true)
@@ -211,7 +215,8 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
       }
     }
     fetchDetails()
-  }, [hotelId, hid, searchParams])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hotelId, hid, paramsKey])
 
   const nights = (() => {
     const d1 = new Date(searchParams.checkIn)

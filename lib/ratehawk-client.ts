@@ -840,7 +840,7 @@ class RateHawkClient {
         language: 'en',
         guests,
         currency: params.currency || 'NOK',
-        timeout: 8
+        timeout: 25
       }
 
       if (params.hid) {

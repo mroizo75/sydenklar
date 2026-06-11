@@ -124,7 +124,8 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
   "kjæledyr": <PawPrint size={14} />,
 }
 
-function getAmenityIcon(name: string): React.ReactNode {
+function getAmenityIcon(name: string | null | undefined): React.ReactNode {
+  if (!name) return <Check size={14} />
   const lower = name.toLowerCase()
   for (const [key, icon] of Object.entries(AMENITY_ICONS)) {
     if (lower.includes(key)) return icon
@@ -639,12 +640,12 @@ function HotellInfoContent() {
                   {amenityGroups.length > 0 && (() => {
                     const popular = amenityGroups.find(g => g.group_name?.toLowerCase().includes("popular") || g.group_name?.toLowerCase().includes("populær"))
                       || amenityGroups[0]
-                    const amenities = popular?.amenities?.slice(0, 8) || []
+                    const amenities = (popular?.amenities?.slice(0, 8) || []).filter((a: { name?: string }) => !!a?.name)
                     if (amenities.length === 0) return null
                     return (
                       <div className="flex flex-wrap gap-2 mb-5">
-                        {amenities.map((a: { name: string }) => (
-                          <span key={a.name} className="flex items-center gap-1.5 text-xs bg-[var(--sea-light)] text-[var(--sea)] px-3 py-1.5 rounded-full">
+                        {amenities.map((a: { name: string }, idx: number) => (
+                          <span key={a.name || idx} className="flex items-center gap-1.5 text-xs bg-[var(--sea-light)] text-[var(--sea)] px-3 py-1.5 rounded-full">
                             {getAmenityIcon(a.name)}
                             {a.name}
                           </span>
@@ -776,7 +777,7 @@ function HotellInfoContent() {
                               {group.group_name}
                             </h3>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                              {(group.amenities ?? []).map((a, j) => (
+                              {(group.amenities ?? []).filter((a: { name?: string }) => !!a?.name).map((a, j) => (
                                 <div key={j} className="flex items-center gap-2">
                                   <span className="text-[var(--coral)] shrink-0">{getAmenityIcon(a.name)}</span>
                                   <span className="text-sm text-[var(--deep)]">{a.name}</span>

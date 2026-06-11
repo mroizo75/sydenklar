@@ -648,7 +648,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                         <div key={i}>
                           <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--muted)] mb-3">{group.group_name}</h4>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {(group.amenities ?? []).map((amenity: any, j: number) => (
+                            {(group.amenities ?? []).filter((a: any) => !!a?.name).map((amenity: any, j: number) => (
                               <div key={j} className="flex items-center gap-2">
                                 <Check size={13} className="text-[var(--coral)] shrink-0" />
                                 <span className="text-sm text-[var(--deep)]">{amenity.name}</span>

@@ -533,9 +533,9 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                                         </span>
                                       )}
                                     </div>
-                                    {room.amenities.length > 0 && (
+                                    {(room.amenities ?? []).length > 0 && (
                                       <div className="flex flex-wrap gap-1 mt-2">
-                                        {room.amenities.slice(0, 4).map(a => (
+                                        {(room.amenities ?? []).slice(0, 4).map(a => (
                                           <span key={a} className="flex items-center gap-1 text-[10px] text-[var(--muted)]">
                                             <Check size={9} className="text-green-500" /> {a}
                                           </span>
@@ -555,7 +555,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                                           {price.amount.toLocaleString("nb-NO")} {price.currency} totalt
                                         </p>
                                       )}
-                                      {price.taxes.some(t => !t.included_by_supplier) && (
+                                      {(price.taxes ?? []).some(t => !t.included_by_supplier) && (
                                         <p className="text-[11px] text-amber-600 font-medium mt-1">+ avgifter v/innsjekk</p>
                                       )}
                                     </div>
@@ -569,12 +569,12 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                                 </div>
 
                                 {/* Skatteinfo */}
-                                {price.taxes.filter(t => !t.included_by_supplier).length > 0 && (
+                                {(price.taxes ?? []).filter(t => !t.included_by_supplier).length > 0 && (
                                   <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-1.5">
                                     <p className="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
                                       ⚠️ Betales direkte til hotellet ved innsjekk
                                     </p>
-                                    {price.taxes.filter(t => !t.included_by_supplier).map((tax, ti) => (
+                                    {(price.taxes ?? []).filter(t => !t.included_by_supplier).map((tax, ti) => (
                                       <div key={ti} className="flex justify-between items-center">
                                         <span className="text-xs text-amber-700">{formatTaxName(tax.name)}</span>
                                         <span className="text-xs font-semibold text-amber-800">
@@ -587,7 +587,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                                     </p>
                                   </div>
                                 )}
-                                {price.taxes.length > 0 && price.taxes.every(t => t.included_by_supplier) && (
+                                {(price.taxes ?? []).length > 0 && (price.taxes ?? []).every(t => t.included_by_supplier) && (
                                   <p className="text-[11px] text-green-700 flex items-center gap-1">
                                     <span>✓</span> Alle skatter og avgifter er inkludert i prisen
                                   </p>
@@ -648,7 +648,7 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
                         <div key={i}>
                           <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--muted)] mb-3">{group.group_name}</h4>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {group.amenities.map((amenity: any, j: number) => (
+                            {(group.amenities ?? []).map((amenity: any, j: number) => (
                               <div key={j} className="flex items-center gap-2">
                                 <Check size={13} className="text-[var(--coral)] shrink-0" />
                                 <span className="text-sm text-[var(--deep)]">{amenity.name}</span>

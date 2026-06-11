@@ -366,7 +366,7 @@ function RoomCard({ room, nights, onBook }: { room: Room; nights: number; onBook
   return (
     <div className="rounded-2xl border border-[var(--border)] overflow-hidden bg-white hover:border-[var(--coral)]/40 transition-colors">
       <div className="flex flex-col sm:flex-row">
-        {room.images.length > 0 && (
+        {(room.images ?? []).length > 0 && (
           <div className="relative sm:w-48 shrink-0 bg-[var(--sand-light)] overflow-hidden" style={{ minHeight: 130 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={room.images[imgIdx]} alt={room.room_name} className="w-full h-full object-cover" style={{ minHeight: 130, maxHeight: 170 }} loading="lazy" />
@@ -401,9 +401,9 @@ function RoomCard({ room, nights, onBook }: { room: Room; nights: number; onBook
                 )}
                 {room.bedding_desc && <span className="text-[11px] bg-[var(--sand-light)] text-[var(--muted)] px-2.5 py-1 rounded-full flex items-center gap-1"><Bed size={9} /> {room.bedding_desc}</span>}
               </div>
-              {room.amenities.length > 0 && (
+              {(room.amenities ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {room.amenities.slice(0, 4).map(a => (
+                  {(room.amenities ?? []).slice(0, 4).map(a => (
                     <span key={a} className="flex items-center gap-1 text-[10px] text-[var(--muted)]">
                       <Check size={9} className="text-green-500" /> {a}
                     </span>
@@ -416,7 +416,7 @@ function RoomCard({ room, nights, onBook }: { room: Room; nights: number; onBook
                 <p className="font-display text-2xl text-[var(--deep)]">{perNight.toLocaleString("nb-NO")}</p>
                 <p className="text-xs text-[var(--muted)]">{price.currency}/natt</p>
                 {nights > 1 && <p className="text-xs text-[var(--muted)] mt-0.5">{price.amount.toLocaleString("nb-NO")} totalt</p>}
-                {price.taxes.some(t => !t.included_by_supplier) && <p className="text-[11px] text-amber-600 font-medium mt-1">+ avgifter v/innsjekk</p>}
+                {(price.taxes ?? []).some(t => !t.included_by_supplier) && <p className="text-[11px] text-amber-600 font-medium mt-1">+ avgifter v/innsjekk</p>}
               </div>
               <button
                 onClick={() => onBook(room)}
@@ -426,9 +426,9 @@ function RoomCard({ room, nights, onBook }: { room: Room; nights: number; onBook
               </button>
             </div>
           </div>
-          {price.taxes.filter(t => !t.included_by_supplier).length > 0 && (
+          {(price.taxes ?? []).filter(t => !t.included_by_supplier).length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
-              ⚠️ Betales direkte til hotellet ved innsjekk: {price.taxes.filter(t => !t.included_by_supplier).map(t => `${t.name} ${t.amount} ${t.currency_code}`).join(", ")}
+              ⚠️ Betales direkte til hotellet ved innsjekk: {(price.taxes ?? []).filter(t => !t.included_by_supplier).map(t => `${t.name} ${t.amount} ${t.currency_code}`).join(", ")}
             </div>
           )}
         </div>
@@ -776,7 +776,7 @@ function HotellInfoContent() {
                               {group.group_name}
                             </h3>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                              {group.amenities.map((a, j) => (
+                              {(group.amenities ?? []).map((a, j) => (
                                 <div key={j} className="flex items-center gap-2">
                                   <span className="text-[var(--coral)] shrink-0">{getAmenityIcon(a.name)}</span>
                                   <span className="text-sm text-[var(--deep)]">{a.name}</span>

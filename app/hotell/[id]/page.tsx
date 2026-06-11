@@ -288,14 +288,60 @@ function HotelGallery({ images }: { images: string[] }) {
   )
 }
 
+const RESIDENCY_OPTIONS = [
+  { value: "no", label: "Norge" },
+  { value: "se", label: "Sverige" },
+  { value: "dk", label: "Danmark" },
+  { value: "fi", label: "Finland" },
+  { value: "is", label: "Island" },
+  { value: "gb", label: "Storbritannia" },
+  { value: "de", label: "Tyskland" },
+  { value: "fr", label: "Frankrike" },
+  { value: "es", label: "Spania" },
+  { value: "it", label: "Italia" },
+  { value: "nl", label: "Nederland" },
+  { value: "be", label: "Belgia" },
+  { value: "at", label: "Østerrike" },
+  { value: "ch", label: "Sveits" },
+  { value: "pl", label: "Polen" },
+  { value: "pt", label: "Portugal" },
+  { value: "gr", label: "Hellas" },
+  { value: "cz", label: "Tsjekkia" },
+  { value: "hu", label: "Ungarn" },
+  { value: "ro", label: "Romania" },
+  { value: "tr", label: "Tyrkia" },
+  { value: "ua", label: "Ukraina" },
+  { value: "ru", label: "Russland" },
+  { value: "us", label: "USA" },
+  { value: "ca", label: "Canada" },
+  { value: "au", label: "Australia" },
+  { value: "nz", label: "New Zealand" },
+  { value: "jp", label: "Japan" },
+  { value: "cn", label: "Kina" },
+  { value: "in", label: "India" },
+  { value: "th", label: "Thailand" },
+  { value: "sg", label: "Singapore" },
+  { value: "ae", label: "UAE" },
+  { value: "za", label: "Sør-Afrika" },
+  { value: "br", label: "Brasil" },
+  { value: "mx", label: "Mexico" },
+  { value: "ar", label: "Argentina" },
+  { value: "il", label: "Israel" },
+  { value: "kr", label: "Sør-Korea" },
+  { value: "eg", label: "Egypt" },
+  { value: "ma", label: "Marokko" },
+]
+
 // ─── Datovelger-widget ────────────────────────────────────────────────────────
-function DateSearchBar({ hotelId, hid, initialCheckIn, initialCheckOut, initialAdults, onSearch }: {
+function DateSearchBar({ hotelId: _hotelId, hid: _hid, initialCheckIn, initialCheckOut, initialAdults, initialChildren, initialResidency, onSearch }: {
   hotelId: string
   hid?: number
   initialCheckIn?: string
   initialCheckOut?: string
   initialAdults?: number
-  onSearch: (checkIn: string, checkOut: string, adults: number) => void
+  initialChildren?: number[]
+  initialResidency?: string
+  onSearch: (checkIn: string, checkOut: string, adults: number, children: number[], residency: string) => void
 }) {
   const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1)
   const dayAfter = new Date(); dayAfter.setDate(dayAfter.getDate() + 4)
@@ -304,14 +350,23 @@ function DateSearchBar({ hotelId, hid, initialCheckIn, initialCheckOut, initialA
   const [checkIn, setCheckIn] = useState(initialCheckIn || fmt(tomorrow))
   const [checkOut, setCheckOut] = useState(initialCheckOut || fmt(dayAfter))
   const [adults, setAdults] = useState(initialAdults || 2)
+  const [childAges, setChildAges] = useState<number[]>(initialChildren || [])
+  const [residency, setResidency] = useState(initialResidency || "no")
 
   const nights = Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))
+
+  const addChild = () => {
+    if (childAges.length < 6) setChildAges(prev => [...prev, 5])
+  }
+  const removeChild = (idx: number) => setChildAges(prev => prev.filter((_, i) => i !== idx))
+  const setChildAge = (idx: number, age: number) => setChildAges(prev => prev.map((a, i) => i === idx ? age : a))
 
   return (
     <div className="bg-white border border-[var(--border)] rounded-2xl p-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-widest text-[var(--muted)] mb-3">Velg datoer for å se priser</p>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        {/* Innsjekk */}
+        <div className="flex-1 min-w-[130px]">
           <label className="block text-xs text-[var(--muted)] mb-1">Innsjekk</label>
           <input
             type="date"
@@ -321,7 +376,8 @@ function DateSearchBar({ hotelId, hid, initialCheckIn, initialCheckOut, initialA
             className="w-full px-3 py-2 border border-[var(--border)] rounded-xl text-sm text-[var(--deep)] focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/30"
           />
         </div>
-        <div className="flex-1">
+        {/* Utsjekk */}
+        <div className="flex-1 min-w-[130px]">
           <label className="block text-xs text-[var(--muted)] mb-1">Utsjekk</label>
           <input
             type="date"
@@ -331,7 +387,8 @@ function DateSearchBar({ hotelId, hid, initialCheckIn, initialCheckOut, initialA
             className="w-full px-3 py-2 border border-[var(--border)] rounded-xl text-sm text-[var(--deep)] focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/30"
           />
         </div>
-        <div className="sm:w-28">
+        {/* Voksne */}
+        <div className="w-full sm:w-28">
           <label className="block text-xs text-[var(--muted)] mb-1">Voksne</label>
           <select
             value={adults}
@@ -341,9 +398,35 @@ function DateSearchBar({ hotelId, hid, initialCheckIn, initialCheckOut, initialA
             {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} voksen{n > 1 ? "e" : ""}</option>)}
           </select>
         </div>
-        <div className="sm:flex sm:items-end">
+        {/* Barn */}
+        <div className="w-full sm:w-auto sm:min-w-[120px]">
+          <label className="block text-xs text-[var(--muted)] mb-1">
+            Barn {childAges.length > 0 && <span className="text-[var(--coral)]">({childAges.length})</span>}
+          </label>
           <button
-            onClick={() => onSearch(checkIn, checkOut, adults)}
+            type="button"
+            onClick={addChild}
+            disabled={childAges.length >= 6}
+            className="w-full px-3 py-2 border border-[var(--border)] rounded-xl text-sm text-[var(--deep)] text-left hover:border-[var(--coral)]/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            + Legg til barn
+          </button>
+        </div>
+        {/* Statsborgerskap */}
+        <div className="w-full sm:w-40">
+          <label className="block text-xs text-[var(--muted)] mb-1">Statsborgerskap</label>
+          <select
+            value={residency}
+            onChange={e => setResidency(e.target.value)}
+            className="w-full px-3 py-2 border border-[var(--border)] rounded-xl text-sm text-[var(--deep)] focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/30"
+          >
+            {RESIDENCY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        {/* Søk-knapp */}
+        <div className="w-full sm:flex sm:items-end">
+          <button
+            onClick={() => onSearch(checkIn, checkOut, adults, childAges, residency)}
             className="w-full sm:w-auto bg-[var(--coral)] hover:bg-[var(--coral-dark)] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
           >
             <Calendar size={15} />
@@ -351,6 +434,33 @@ function DateSearchBar({ hotelId, hid, initialCheckIn, initialCheckOut, initialA
           </button>
         </div>
       </div>
+
+      {/* Barn-aldere */}
+      {childAges.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {childAges.map((age, idx) => (
+            <div key={idx} className="flex items-center gap-1.5 bg-[var(--sand-light)] rounded-xl px-2.5 py-1.5">
+              <span className="text-xs text-[var(--muted)]">Barn {idx + 1}:</span>
+              <select
+                value={age}
+                onChange={e => setChildAge(idx, Number(e.target.value))}
+                className="text-xs text-[var(--deep)] bg-transparent border-none focus:outline-none cursor-pointer"
+              >
+                {Array.from({ length: 18 }, (_, i) => (
+                  <option key={i} value={i}>{i === 0 ? "Under 1 år" : `${i} år`}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => removeChild(idx)}
+                className="text-[var(--muted)] hover:text-red-500 transition-colors ml-0.5"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -450,6 +560,9 @@ function HotellInfoContent() {
   const urlCheckOut = searchParams.get("checkOut") || ""
   const urlAdults = Number(searchParams.get("adults") || "2")
   const urlResidency = searchParams.get("residency") || "no"
+  const urlChildAges = searchParams.get("childAges")
+    ? searchParams.get("childAges")!.split(",").map(Number).filter(n => !isNaN(n))
+    : []
 
   const [info, setInfo] = useState<HotelInfo | null>(null)
   const [infoLoading, setInfoLoading] = useState(true)
@@ -462,6 +575,8 @@ function HotellInfoContent() {
     checkIn: urlCheckIn,
     checkOut: urlCheckOut,
     adults: urlAdults,
+    children: urlChildAges,
+    residency: urlResidency,
   })
 
   // Hent statisk hotellinfo
@@ -486,7 +601,7 @@ function HotellInfoContent() {
   }, [hotelId, hid])
 
   // Hent rom og priser
-  const fetchDetail = useCallback(async (checkIn: string, checkOut: string, adults: number) => {
+  const fetchDetail = useCallback(async (checkIn: string, checkOut: string, adults: number, children: number[], residency: string) => {
     if (!checkIn || !checkOut) return
     setDetailLoading(true)
     setDetailError("")
@@ -500,9 +615,9 @@ function HotellInfoContent() {
           checkIn,
           checkOut,
           adults,
-          children: [],
+          children,
           currency: "NOK",
-          residency: urlResidency,
+          residency,
         }),
       })
       const data = await res.json()
@@ -522,19 +637,25 @@ function HotellInfoContent() {
   // Auto-søk ved oppstart hvis datoer er i URL
   useEffect(() => {
     if (urlCheckIn && urlCheckOut) {
-      fetchDetail(urlCheckIn, urlCheckOut, urlAdults)
+      fetchDetail(urlCheckIn, urlCheckOut, urlAdults, urlChildAges, urlResidency)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleSearch = (checkIn: string, checkOut: string, adults: number) => {
-    setSearchDates({ checkIn, checkOut, adults })
+  const handleSearch = (checkIn: string, checkOut: string, adults: number, children: number[], residency: string) => {
+    setSearchDates({ checkIn, checkOut, adults, children, residency })
     const url = new URL(window.location.href)
     url.searchParams.set("checkIn", checkIn)
     url.searchParams.set("checkOut", checkOut)
     url.searchParams.set("adults", String(adults))
+    if (children.length > 0) {
+      url.searchParams.set("childAges", children.join(","))
+    } else {
+      url.searchParams.delete("childAges")
+    }
+    url.searchParams.set("residency", residency)
     router.replace(url.pathname + url.search, { scroll: false })
-    fetchDetail(checkIn, checkOut, adults)
+    fetchDetail(checkIn, checkOut, adults, children, residency)
   }
 
   const nights = searchDates.checkIn && searchDates.checkOut
@@ -661,6 +782,8 @@ function HotellInfoContent() {
                     initialCheckIn={searchDates.checkIn}
                     initialCheckOut={searchDates.checkOut}
                     initialAdults={searchDates.adults}
+                    initialChildren={searchDates.children}
+                    initialResidency={searchDates.residency}
                     onSearch={handleSearch}
                   />
                 </div>
@@ -867,9 +990,9 @@ function HotellInfoContent() {
             checkIn: searchDates.checkIn,
             checkOut: searchDates.checkOut,
             adults: searchDates.adults,
-            children: [],
+            children: searchDates.children,
             roomCount: 1,
-            roomConfigs: [{ adults: searchDates.adults, childAges: [] }],
+            roomConfigs: [{ adults: searchDates.adults, childAges: searchDates.children }],
           }}
           onClose={() => setBookingRoom(null)}
         />

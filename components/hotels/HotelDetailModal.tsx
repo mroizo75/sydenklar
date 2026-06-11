@@ -294,16 +294,32 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
   }
 
   const formatTaxName = (name: string): string => {
+    if (!name) return ""
     const taxNames: Record<string, string> = {
-      "city_tax": "Byavgift",
-      "resort_fee": "Resort-avgift",
-      "vat": "MVA",
-      "service_charge": "Serviceavgift",
-      "electricity_fee": "Strømavgift",
-      "tourism_tax": "Turistskatt",
-      "local_tax": "Lokal skatt",
+      city_tax: "Byavgift",
+      cleaning_fee: "Rengjøringsgebyr",
+      occupancy_tax: "Oppholdsskatt",
+      resort_fee: "Resortavgift",
+      service_charge: "Servicegebyr",
+      service_fee: "Servicegebyr",
+      vat: "MVA",
+      local_tax: "Lokalskatt",
+      tourism_tax: "Turistskatt",
+      tourist_tax: "Turistskatt",
+      environmental_fee: "Miljøavgift",
+      parking_fee: "Parkeringsavgift",
+      energy_surcharge: "Energitillegg",
+      heritage_fee: "Kulturarvavgift",
+      destination_fee: "Destinasjonsavgift",
+      amenity_fee: "Fasilitetsavgift",
+      facility_fee: "Fasilitetsavgift",
+      spa_fee: "Spa-avgift",
+      resort_levy: "Resortavgift",
+      electricity_fee: "Strømavgift",
+      tax: "Skatt",
     }
-    return taxNames[name] ?? name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+    const key = name.toLowerCase().replace(/-/g, "_")
+    return taxNames[key] ?? name.replace(/[_-]/g, " ").replace(/\b\w/g, c => c.toUpperCase())
   }
 
   const getCancellationLabel = (penalties: any): string => {

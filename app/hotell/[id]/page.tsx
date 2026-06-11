@@ -171,6 +171,44 @@ function getMealLabel(meal: any): string {
   return ""
 }
 
+const TAX_NAME_MAP: Record<string, string> = {
+  city_tax: "Byavgift",
+  cleaning_fee: "Rengjøringsgebyr",
+  occupancy_tax: "Oppholdsskatt",
+  resort_fee: "Resortavgift",
+  service_charge: "Servicegebyr",
+  service_fee: "Servicegebyr",
+  vat: "MVA",
+  local_tax: "Lokalskatt",
+  tourism_tax: "Turistskatt",
+  tourist_tax: "Turistskatt",
+  environmental_fee: "Miljøavgift",
+  parking_fee: "Parkeringsavgift",
+  energy_surcharge: "Energitillegg",
+  heritage_fee: "Kulturarvavgift",
+  destination_fee: "Destinasjonsavgift",
+  amenity_fee: "Fasilitetsavgift",
+  facility_fee: "Fasilitetsavgift",
+  spa_fee: "Spa-avgift",
+  resort_levy: "Resortavgift",
+  tax: "Skatt",
+}
+
+function formatTaxName(raw: string): string {
+  if (!raw) return ""
+  const key = raw.toLowerCase().replace(/-/g, "_")
+  if (TAX_NAME_MAP[key]) return TAX_NAME_MAP[key]
+  return raw
+    .replace(/[_-]/g, " ")
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function formatTaxAmount(amount: string, currency: string): string {
+  const num = parseFloat(amount)
+  if (isNaN(num)) return `${amount} ${currency}`
+  return `${num.toLocaleString("nb-NO", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`
+}
+
 function getCancellationLabel(penalties: any): string {
   if (!penalties) return "Se vilkår"
   const freeBefore: string | undefined = penalties.free_cancellation_before
@@ -539,7 +577,14 @@ function RoomCard({ room, nights, onBook }: { room: Room; nights: number; onBook
           </div>
           {(price.taxes ?? []).filter(t => !t.included_by_supplier).length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
-              ⚠️ Betales direkte til hotellet ved innsjekk: {(price.taxes ?? []).filter(t => !t.included_by_supplier).map(t => `${t.name} ${t.amount} ${t.currency_code}`).join(", ")}
+              <p className="font-medium mb-1.5">⚠️ Betales direkte til hotellet ved innsjekk:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(price.taxes ?? []).filter(t => !t.included_by_supplier).map((t, i) => (
+                  <span key={i} className="bg-amber-100 rounded-lg px-2 py-0.5 whitespace-nowrap">
+                    {formatTaxName(t.name)} — {formatTaxAmount(t.amount, t.currency_code)}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>

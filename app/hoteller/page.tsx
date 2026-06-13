@@ -142,12 +142,19 @@ function HotellPageContent() {
     const checkIn = urlCheckIn || fmt(tomorrow)
     const checkOut = urlCheckOut || fmt(checkOutDefault)
 
-    // Fordel voksne jevnt over rom, legg alle barn med riktig alder i første rom
+    // Fordel voksne jevnt over rom. Ekstra voksne i rom 1.
+    // Barn plasseres fra SISTE rom og bakover (1 per rom). Overskudd til rom 1.
+    // Eksempel: 2 rom, 1 barn → rom 1: [], rom 2: [barn]
     const baseAdults = Math.floor(urlAdults / urlRooms)
     const extraAdults = urlAdults % urlRooms
+    const childrenPerRoom: number[][] = Array.from({ length: urlRooms }, () => [])
+    urlChildAges.forEach((age, idx) => {
+      const roomIdx = Math.max(0, urlRooms - 1 - idx)
+      childrenPerRoom[roomIdx].push(age)
+    })
     const roomConfigs = Array.from({ length: urlRooms }, (_, i) => ({
-      adults: baseAdults + (i === 0 ? extraAdults : 0),
-      childAges: i === 0 ? urlChildAges : [],
+      adults: Math.max(1, baseAdults + (i === 0 ? extraAdults : 0)),
+      childAges: childrenPerRoom[i],
     }))
 
     async function autoSearch() {

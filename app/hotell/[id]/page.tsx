@@ -218,10 +218,12 @@ function getCancellationLabel(penalties: any): string {
       day: "numeric", month: "short", year: "numeric",
       hour: "2-digit", minute: "2-digit", timeZone: "UTC"
     })
-    return `Gratis avbestilling før ${formatted}`
+    return `Gratis avbestilling før ${formatted} UTC+0`
   }
   if (penalties.policies && Array.isArray(penalties.policies)) {
-    const free = penalties.policies.find((p: any) => p.amount_charge === "0" || p.amount_charge === 0)
+    const free = penalties.policies.find((p: any) =>
+      p.amount_charge === "0" || p.amount_charge === 0 || parseFloat(p.amount_charge) === 0
+    )
     if (free) return "Gratis avbestilling"
   }
   return "Ikke-refunderbar"
@@ -661,6 +663,7 @@ function HotellInfoContent() {
           checkOut,
           adults,
           children,
+          roomConfigs: [{ adults, childAges: children }],
           currency: "NOK",
           residency,
         }),

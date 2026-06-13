@@ -833,10 +833,16 @@ class RateHawkClient {
         ? params.roomConfigs.map(r => ({ adults: r.adults, children: r.childAges || [] }))
         : [{ adults: params.adults, children: Array.isArray(params.children) ? params.children : [] }]
 
+      // Bruk residency direkte — det er allerede en gyldig ISO 3166-1 alpha-2 kode
+      // fra frontend. getUserResidency wrapper skal ikke endre gyldige koder.
+      const residencyCode = params.residency && /^[a-z]{2}$/i.test(params.residency.trim())
+        ? params.residency.trim().toLowerCase()
+        : 'no'
+
       const requestParams: any = {
         checkin: params.checkIn,
         checkout: params.checkOut,
-        residency: this.getUserResidency(params.residency),
+        residency: residencyCode,
         language: 'en',
         guests,
         currency: params.currency || 'NOK',
@@ -980,7 +986,9 @@ class RateHawkClient {
               meal_data: rate.meal_data || {},
               daily_prices: rate.daily_prices || [],
               payment_options: rate.payment_options || {},
-              cancellation_penalties: rate.cancellation_penalties || null,
+              cancellation_penalties: rate.cancellation_penalties
+                || rate.payment_options?.payment_types?.[0]?.cancellation_penalties
+                || null,
               tax_data: rate.payment_options?.payment_types?.[0]?.tax_data || null,
               amenities: [
                 ...(rate.amenities_data || []).map((a: string) => this.formatAmenityName(a)),
@@ -1121,8 +1129,9 @@ class RateHawkClient {
       }
 
       // Step 1: /hotel/prebook/ — validates the rate and returns p- hash
+      // ETG API requires "hash" (not "book_hash") as the parameter name here
       const prebookData = await this.makeRequest('/hotel/prebook/', {
-        book_hash: params.bookHash,
+        hash: params.bookHash,
         price_increase_percent: 10,
       }, 'POST')
 

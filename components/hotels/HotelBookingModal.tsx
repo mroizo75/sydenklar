@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 import { applyMarkup } from "@/lib/pricing"
 import {
@@ -251,9 +251,14 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
   const updateChild = (idx: number, field: keyof ChildGuest, value: string | number) =>
     setChildGuests(prev => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c))
 
+  // Prevent React Strict Mode double-invoke from calling prebook twice
+  const prebookCalledRef = useRef(false)
+
   // Run prebook immediately on modal open to get the p-hash and check availability/price
   // before the user fills in the booking form (certifier recommendation).
   useEffect(() => {
+    if (prebookCalledRef.current) return
+    prebookCalledRef.current = true
     const runPrebook = async () => {
       try {
         const res = await fetch("/api/hotels/prebook", {

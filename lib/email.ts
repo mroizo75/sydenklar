@@ -17,15 +17,21 @@ export async function sendBookingConfirmationEmail(params: BookingConfirmationPr
     const resend = getResend()
     const html = await render(BookingConfirmationEmail(params))
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: `Sydenklar.no <${FROM}>`,
       to: params.to,
       subject: `Bookingbekreftelse – ${params.hotelName} (${params.partnerOrderId})`,
       html,
     })
+
+    if ((result as any).error) {
+      console.error('[email] Resend avviste e-posten:', JSON.stringify((result as any).error))
+    } else {
+      console.log('[email] Bekreftelses-e-post sendt til', params.to, '— id:', (result as any).data?.id)
+    }
   } catch (error: unknown) {
-    const err = error as { message?: string }
-    console.error('[email] Kunne ikke sende bekreftelses-e-post:', err.message)
+    const err = error as { message?: string; statusCode?: number; name?: string }
+    console.error('[email] Kunne ikke sende bekreftelses-e-post:', err.name, err.statusCode, err.message)
   }
 }
 

@@ -1143,28 +1143,22 @@ class RateHawkClient {
         throw new Error(prebookData?.error || 'Prebook failed')
       }
 
-      // Log the full prebook response to diagnose p-hash extraction issues
-      console.log('[prebookRate] prebook raw response:', JSON.stringify(prebookData).slice(0, 1000))
+      // ETG /hotel/prebook/ returns: { data: { hotels: [{ rates: [{ book_hash: "p-..." }] }], changes: [] } }
+      // The p-hash is at data.hotels[0].rates[0].book_hash
+      const prebookHotel = prebookData.data?.hotels?.[0]
+      const prebookRate = prebookHotel?.rates?.[0]
+      const pHash: string = prebookRate?.book_hash || params.bookHash
 
-      // Extract p- hash from prebook response.
-      // ETG may return it as data.book_hash, data.hash, or at the root level.
-      const prebookDataObj = Array.isArray(prebookData.data) ? prebookData.data[0] : prebookData.data
-      const rawPHash = prebookDataObj?.book_hash
-        || prebookDataObj?.hash
-        || (prebookData as any).book_hash
-        || (prebookData as any).hash
-      const pHash: string = rawPHash || params.bookHash
-      if (!rawPHash) {
-        console.error('[prebookRate] WARNING: no p-hash found. Full response keys:', {
-          topLevel: Object.keys(prebookData || {}),
-          dataType: Array.isArray(prebookData.data) ? 'array' : typeof prebookData.data,
-          dataKeys: prebookDataObj ? Object.keys(prebookDataObj) : 'no data',
+      if (!prebookRate?.book_hash) {
+        console.error('[prebookRate] WARNING: p-hash not found at data.hotels[0].rates[0].book_hash', {
+          dataKeys: prebookData.data ? Object.keys(prebookData.data) : 'no data',
+          hotelsCount: prebookData.data?.hotels?.length ?? 0,
         })
-      } else {
-        console.log('[prebookRate] p-hash extracted:', pHash.slice(0, 20) + '...')
       }
-      const priceChanged: boolean = prebookDataObj?.price_changed ?? false
-      const prebookPaymentTypes = prebookDataObj?.payment_options ?? null
+
+      // Price changed if the changes array is non-empty
+      const priceChanged: boolean = Array.isArray(prebookData.data?.changes) && prebookData.data.changes.length > 0
+      const prebookPaymentTypes = prebookRate?.payment_options?.payment_types ?? null
 
       // Step 2: /hotel/order/booking/form/ — links the p- hash to our partner_order_id
       const now = new Date()

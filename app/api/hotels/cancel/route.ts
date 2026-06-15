@@ -52,10 +52,16 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = (session?.user as { id?: string })?.id ?? null
-    const isOwner = userId && booking.userId === userId
-    const isValidToken = !session?.user && cancelToken && verifyCancelToken(partnerOrderId, cancelToken)
+    const sessionEmail = (session?.user as { email?: string })?.email ?? null
 
-    if (!isOwner && !isValidToken) {
+    // 1. Innlogget bruker som eier bookingen
+    const isOwner = userId && booking.userId === userId
+    // 2. Innlogget bruker med samme e-post som bookingen (gjestebestilling koblet til konto)
+    const isEmailMatch = sessionEmail && booking.guestEmail === sessionEmail
+    // 3. Gyldig kryptografisk cancel-token (fra e-postlenke — tillatt uavhengig av innlogging)
+    const isValidToken = cancelToken && verifyCancelToken(partnerOrderId, cancelToken)
+
+    if (!isOwner && !isEmailMatch && !isValidToken) {
       return NextResponse.json({ success: false, error: 'Ikke autorisert' }, { status: 403 })
     }
 

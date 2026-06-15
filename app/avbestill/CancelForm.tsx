@@ -156,12 +156,17 @@ export default function CancelForm({
           {step === 'loading' ? (
             <span className="flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Kansellerer…
+              Kontakter hotellet…
             </span>
           ) : (
             'Bekreft avbestilling'
           )}
         </button>
+        {step === 'loading' && (
+          <p className="text-center text-xs text-[var(--muted)] mt-2 w-full">
+            Dette kan ta opptil 30 sekunder. Ikke lukk vinduet.
+          </p>
+        )}
       </div>
     </div>
   )

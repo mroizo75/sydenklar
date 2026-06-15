@@ -28,6 +28,8 @@ interface HotelResultsProps {
     checkOut: string
     adults: number
     children: number[]
+    residency?: string
+    roomConfigs?: { adults: number; childAges: number[] }[]
   }
   onSelectHotel: (hotel: RateHawkHotel) => void
   onLoadMore?: (newHotels: RateHawkHotel[], hasMore: boolean) => void

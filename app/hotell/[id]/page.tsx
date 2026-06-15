@@ -609,6 +609,7 @@ function HotellInfoContent() {
   const urlCheckIn = searchParams.get("checkIn") || ""
   const urlCheckOut = searchParams.get("checkOut") || ""
   const urlAdults = Number(searchParams.get("adults") || "2")
+  const urlRooms = Math.max(1, Math.min(4, Number(searchParams.get("rooms") || "1")))
   const urlResidency = searchParams.get("residency") || "no"
   const urlChildAges = searchParams.get("childAges")
     ? searchParams.get("childAges")!.split(",").map(Number).filter(n => !isNaN(n))
@@ -651,10 +652,22 @@ function HotellInfoContent() {
   }, [hotelId, hid])
 
   // Hent rom og priser
-  const fetchDetail = useCallback(async (checkIn: string, checkOut: string, adults: number, children: number[], residency: string) => {
+  const fetchDetail = useCallback(async (checkIn: string, checkOut: string, adults: number, children: number[], residency: string, rooms = 1) => {
     if (!checkIn || !checkOut) return
     setDetailLoading(true)
     setDetailError("")
+    // Distribute adults evenly; children go to later rooms first (1 per room)
+    const baseAdults = Math.floor(adults / rooms)
+    const extraAdults = adults % rooms
+    const childrenPerRoom: number[][] = Array.from({ length: rooms }, () => [])
+    children.forEach((age, idx) => {
+      const roomIdx = Math.max(0, rooms - 1 - idx)
+      childrenPerRoom[roomIdx].push(age)
+    })
+    const roomConfigs = Array.from({ length: rooms }, (_, i) => ({
+      adults: Math.max(1, baseAdults + (i === 0 ? extraAdults : 0)),
+      childAges: childrenPerRoom[i],
+    }))
     try {
       const res = await fetch("/api/hotels/details", {
         method: "POST",
@@ -666,7 +679,7 @@ function HotellInfoContent() {
           checkOut,
           adults,
           children,
-          roomConfigs: [{ adults, childAges: children }],
+          roomConfigs,
           currency: "NOK",
           residency,
         }),
@@ -688,13 +701,14 @@ function HotellInfoContent() {
   // Auto-søk ved oppstart hvis datoer er i URL
   useEffect(() => {
     if (urlCheckIn && urlCheckOut) {
-      fetchDetail(urlCheckIn, urlCheckOut, urlAdults, urlChildAges, urlResidency)
+      fetchDetail(urlCheckIn, urlCheckOut, urlAdults, urlChildAges, urlResidency, urlRooms)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSearch = (checkIn: string, checkOut: string, adults: number, children: number[], residency: string) => {
     setSearchDates({ checkIn, checkOut, adults, children, residency })
+    fetchDetail(checkIn, checkOut, adults, children, residency, 1)
     const url = new URL(window.location.href)
     url.searchParams.set("checkIn", checkIn)
     url.searchParams.set("checkOut", checkOut)
@@ -706,7 +720,6 @@ function HotellInfoContent() {
     }
     url.searchParams.set("residency", residency)
     router.replace(url.pathname + url.search, { scroll: false })
-    fetchDetail(checkIn, checkOut, adults, children, residency)
   }
 
   const nights = searchDates.checkIn && searchDates.checkOut

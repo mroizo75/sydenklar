@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 import { applyMarkup } from "@/lib/pricing"
 import {
@@ -165,7 +165,9 @@ function StripeCheckoutForm({
 // --- Main modal ---
 
 export default function HotelBookingModal({ room, hotel, searchParams, onClose }: HotelBookingModalProps) {
-  const [step, setStep] = useState<Step>("guest_info")
+  // Start in "prebook" — immediately verify availability and get p-hash before showing the form.
+  // This way the user is never surprised by price changes after filling in their details.
+  const [step, setStep] = useState<Step>("prebook")
   const [guestInfo, setGuestInfo] = useState<GuestInfo>({
     firstName: "", lastName: "", email: "", phone: "", remarks: ""
   })
@@ -249,7 +251,53 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
   const updateChild = (idx: number, field: keyof ChildGuest, value: string | number) =>
     setChildGuests(prev => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c))
 
-  // Steg 1 → prebook
+  // Run prebook immediately on modal open to get the p-hash and check availability/price
+  // before the user fills in the booking form (certifier recommendation).
+  useEffect(() => {
+    const runPrebook = async () => {
+      try {
+        const res = await fetch("/api/hotels/prebook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bookHash: room.book_hash,
+            checkIn: searchParams.checkIn,
+            checkOut: searchParams.checkOut,
+            adults: searchParams.adults,
+            children: searchParams.children,
+            currency: price.currency,
+          }),
+        })
+        const data = await res.json()
+        if (data.success) {
+          const prebook = data.prebookData
+          if (prebook.price_changed) {
+            const newNetAmount = parseFloat(prebook.payment_types?.[0]?.amount || "0")
+            setPriceChangedInfo({
+              oldAmount: applyMarkup(price.amount),
+              newAmount: applyMarkup(newNetAmount),
+              currency: price.currency,
+            })
+            setPrebookData(prebook)
+            setStep("price_changed")
+          } else {
+            setPrebookData(prebook)
+            setStep("guest_info")
+          }
+        } else {
+          setError(data.error || "Prebooking feilet")
+          setStep("error")
+        }
+      } catch {
+        setError("En feil oppsto. Prøv igjen.")
+        setStep("error")
+      }
+    }
+    runPrebook()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Steg: bruker har fylt inn gjestinfo → gå til betaling
   const handlePrebook = async () => {
     if (!guestInfo.firstName || !guestInfo.lastName || !guestInfo.email || !guestInfo.phone) {
       setError("Vennligst fyll inn all gjesteinformasjon")
@@ -265,47 +313,8 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
       setError("Vennligst fyll inn navn på alle barn")
       return
     }
-    setStep("prebook")
     setError("")
-    try {
-      const res = await fetch("/api/hotels/prebook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookHash: room.book_hash,
-          checkIn: searchParams.checkIn,
-          checkOut: searchParams.checkOut,
-          adults: searchParams.adults,
-          children: searchParams.children,
-          currency: price.currency,
-        }),
-      })
-      const data = await res.json()
-
-      if (data.success) {
-        const prebook = data.prebookData
-
-        if (prebook.price_changed) {
-          const newNetAmount = parseFloat(prebook.payment_types?.[0]?.amount || "0")
-          setPriceChangedInfo({
-            oldAmount: applyMarkup(price.amount),
-            newAmount: applyMarkup(newNetAmount),
-            currency: price.currency,
-          })
-          setPrebookData(prebook)
-          setStep("price_changed")
-        } else {
-          setPrebookData(prebook)
-          await initializePayment(prebook)
-        }
-      } else {
-        setError(data.error || "Prebooking feilet")
-        setStep("error")
-      }
-    } catch {
-      setError("En feil oppsto. Prøv igjen.")
-      setStep("error")
-    }
+    await initializePayment(prebookData)
   }
 
   // Init Stripe PaymentIntent — kunden betaler nettopris + bestillingsgebyr

@@ -11,6 +11,8 @@ interface HotelCardProps {
     checkOut: string
     adults: number
     children: number[]
+    residency?: string
+    roomConfigs?: { adults: number; childAges: number[] }[]
   }
   variant?: "vertical" | "horizontal"
 }
@@ -56,8 +58,19 @@ function StarRow({ rating }: { rating: number }) {
   )
 }
 
-function hotelInfoUrl(hotel: RateHawkHotel, sp: { checkIn: string; checkOut: string; adults: number }): string {
-  const p = new URLSearchParams({ checkIn: sp.checkIn, checkOut: sp.checkOut, adults: String(sp.adults) })
+function hotelInfoUrl(hotel: RateHawkHotel, sp: { checkIn: string; checkOut: string; adults: number; children?: number[]; residency?: string; roomConfigs?: { adults: number; childAges: number[] }[] }): string {
+  const rooms = sp.roomConfigs?.length ?? 1
+  const childAges = sp.roomConfigs
+    ? sp.roomConfigs.flatMap(r => r.childAges)
+    : (sp.children ?? [])
+  const p = new URLSearchParams({
+    checkIn: sp.checkIn,
+    checkOut: sp.checkOut,
+    adults: String(sp.adults),
+    rooms: String(rooms),
+  })
+  if (sp.residency && sp.residency !== "no") p.set("residency", sp.residency)
+  if (childAges.length > 0) p.set("childAges", childAges.join(","))
   if (hotel.hid) p.set("hid", String(hotel.hid))
   return `/hotell/${encodeURIComponent(hotel.id)}?${p.toString()}`
 }

@@ -336,6 +336,8 @@ function HotellPageContent() {
                 checkOut: searchState.checkOut,
                 adults: totalAdults,
                 children: allChildren,
+                residency: searchState.residency,
+                roomConfigs: searchState.roomConfigs,
               }}
               onSelectHotel={hotel => setSelectedHotel(hotel)}
               onLoadMore={(newHotels, hasMore) => {

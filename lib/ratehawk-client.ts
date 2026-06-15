@@ -1143,9 +1143,23 @@ class RateHawkClient {
         throw new Error(prebookData?.error || 'Prebook failed')
       }
 
-      const pHash: string = prebookData.data.book_hash || params.bookHash
-      const priceChanged: boolean = prebookData.data.price_changed ?? false
-      const prebookPaymentTypes = prebookData.data.payment_options ?? null
+      // Extract p- hash from prebook response.
+      // ETG may return it as data.book_hash, data.hash, or (rarely) at the root level.
+      // If none found, fall back to the original h- hash so booking/form can still proceed.
+      const prebookDataObj = Array.isArray(prebookData.data) ? prebookData.data[0] : prebookData.data
+      const rawPHash = prebookDataObj?.book_hash
+        || prebookDataObj?.hash
+        || (prebookData as any).book_hash
+        || (prebookData as any).hash
+      const pHash: string = rawPHash || params.bookHash
+      if (!rawPHash) {
+        console.error('[prebookRate] WARNING: no p-hash in prebook response. Falling back to h-hash.', {
+          dataType: Array.isArray(prebookData.data) ? 'array' : typeof prebookData.data,
+          dataKeys: prebookDataObj ? Object.keys(prebookDataObj) : 'no data',
+        })
+      }
+      const priceChanged: boolean = prebookDataObj?.price_changed ?? false
+      const prebookPaymentTypes = prebookDataObj?.payment_options ?? null
 
       // Step 2: /hotel/order/booking/form/ — links the p- hash to our partner_order_id
       const now = new Date()

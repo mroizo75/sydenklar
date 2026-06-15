@@ -213,7 +213,10 @@ function getCancellationLabel(penalties: any): string {
   if (!penalties) return "Se vilkår"
   const freeBefore: string | undefined = penalties.free_cancellation_before
   if (freeBefore) {
-    const dt = new Date(freeBefore)
+    // Force UTC parsing: ETG returns "2026-06-20T05:00:00" without Z suffix.
+    // Without Z, JS treats the string as local time (server may be UTC+3), giving a wrong offset.
+    const utcStr = freeBefore.endsWith('Z') || freeBefore.includes('+') ? freeBefore : freeBefore + 'Z'
+    const dt = new Date(utcStr)
     const formatted = dt.toLocaleString("nb-NO", {
       day: "numeric", month: "short", year: "numeric",
       hour: "2-digit", minute: "2-digit", timeZone: "UTC"

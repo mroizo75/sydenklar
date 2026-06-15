@@ -705,6 +705,7 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
             <div className="px-6 py-5">
               <p className="text-xs font-bold uppercase tracking-widest text-[var(--muted)] mb-4">Betalingsinformasjon</p>
               <Elements
+                key={clientSecret}
                 stripe={stripePromise}
                 options={{
                   clientSecret,

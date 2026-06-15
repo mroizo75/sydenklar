@@ -180,7 +180,10 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
 
   // Stable string key derived from primitive searchParams values.
   // Avoids re-fetching when the parent passes a new object reference with identical values.
-  const paramsKey = `${searchParams.checkIn}|${searchParams.checkOut}|${searchParams.adults}|${(searchParams.children || []).join(",")}|${searchParams.residency || "no"}`
+  const roomConfigsKey = (searchParams.roomConfigs || [])
+    .map(r => `${r.adults}:${(r.childAges || []).join('+')}`)
+    .join('|')
+  const paramsKey = `${searchParams.checkIn}|${searchParams.checkOut}|${searchParams.adults}|${(searchParams.children || []).join(",")}|${searchParams.residency || "no"}|${roomConfigsKey}`
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -326,24 +329,26 @@ export default function HotelDetailModal({ hotelId, hid, hotelName, searchParams
     if (!penalties) return "Se vilkår"
     const freeBefore: string | undefined = penalties.free_cancellation_before
     if (freeBefore) {
-      const dt = new Date(freeBefore)
+      const utcStr = freeBefore.endsWith('Z') || freeBefore.includes('+') ? freeBefore : freeBefore + 'Z'
+      const dt = new Date(utcStr)
       const formatted = dt.toLocaleString("nb-NO", {
         day: "numeric", month: "short", year: "numeric",
         hour: "2-digit", minute: "2-digit", timeZone: "UTC"
       })
-      return `Gratis avbestilling før ${formatted} UTC`
+      return `Gratis avbestilling før ${formatted} UTC+0`
     }
     if (penalties.policies && Array.isArray(penalties.policies)) {
       const freePolicy = penalties.policies.find((p: any) =>
         p.amount_charge === "0" || p.amount_charge === 0
       )
       if (freePolicy?.end_at) {
-        const dt = new Date(freePolicy.end_at)
+        const utcEndAt = freePolicy.end_at.endsWith('Z') || freePolicy.end_at.includes('+') ? freePolicy.end_at : freePolicy.end_at + 'Z'
+        const dt = new Date(utcEndAt)
         const formatted = dt.toLocaleString("nb-NO", {
           day: "numeric", month: "short", year: "numeric",
           hour: "2-digit", minute: "2-digit", timeZone: "UTC"
         })
-        return `Gratis avbestilling før ${formatted} UTC`
+        return `Gratis avbestilling før ${formatted} UTC+0`
       }
       const firstPolicy = penalties.policies[0]
       if (firstPolicy?.amount_charge === "0" || firstPolicy?.amount_charge === 0) {

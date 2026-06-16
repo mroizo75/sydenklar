@@ -9,6 +9,7 @@ import HotelResults from "@/components/hotels/HotelResults"
 import HotelDetailModal from "@/components/hotels/HotelDetailModal"
 import HotelBookingModal from "@/components/hotels/HotelBookingModal"
 import { RateHawkHotel } from "@/lib/types"
+import { decodeRoomCfg } from "@/lib/room-config"
 
 interface SearchState {
   destination: string
@@ -34,6 +35,8 @@ function HotellPageContent() {
   const urlDestinationType = searchParams.get("destinationType") || "region"
   const urlCheckIn = searchParams.get("checkIn") || ""
   const urlCheckOut = searchParams.get("checkOut") || ""
+  const urlRoomCfg = searchParams.get("roomCfg")
+  // Legacy fallback params — kept for backwards compatibility with old URLs
   const urlAdults = parseInt(searchParams.get("adults") || "2", 10) || 2
   const urlBarn = parseInt(searchParams.get("barn") || "0", 10) || 0
   const urlRooms = Math.max(1, Math.min(4, parseInt(searchParams.get("rooms") || "1", 10) || 1))
@@ -142,20 +145,22 @@ function HotellPageContent() {
     const checkIn = urlCheckIn || fmt(tomorrow)
     const checkOut = urlCheckOut || fmt(checkOutDefault)
 
-    // Fordel voksne jevnt over rom. Ekstra voksne i rom 1.
-    // Barn plasseres fra SISTE rom og bakover (1 per rom). Overskudd til rom 1.
-    // Eksempel: 2 rom, 1 barn → rom 1: [], rom 2: [barn]
-    const baseAdults = Math.floor(urlAdults / urlRooms)
-    const extraAdults = urlAdults % urlRooms
-    const childrenPerRoom: number[][] = Array.from({ length: urlRooms }, () => [])
-    urlChildAges.forEach((age, idx) => {
-      const roomIdx = Math.max(0, urlRooms - 1 - idx)
-      childrenPerRoom[roomIdx].push(age)
-    })
-    const roomConfigs = Array.from({ length: urlRooms }, (_, i) => ({
-      adults: Math.max(1, baseAdults + (i === 0 ? extraAdults : 0)),
-      childAges: childrenPerRoom[i],
-    }))
+    // Prefer structured roomCfg param which preserves exact per-room configuration.
+    // Fall back to legacy adults/rooms/childAges params for old URLs.
+    const decodedRoomCfg = decodeRoomCfg(urlRoomCfg)
+    const roomConfigs = decodedRoomCfg ?? (() => {
+      const baseAdults = Math.floor(urlAdults / urlRooms)
+      const extraAdults = urlAdults % urlRooms
+      const childrenPerRoom: number[][] = Array.from({ length: urlRooms }, () => [])
+      urlChildAges.forEach((age, idx) => {
+        const roomIdx = Math.max(0, urlRooms - 1 - idx)
+        childrenPerRoom[roomIdx].push(age)
+      })
+      return Array.from({ length: urlRooms }, (_, i) => ({
+        adults: Math.max(1, baseAdults + (i === 0 ? extraAdults : 0)),
+        childAges: childrenPerRoom[i],
+      }))
+    })()
 
     async function autoSearch() {
       setLoading(true)

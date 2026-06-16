@@ -108,19 +108,24 @@ function StripeCheckoutForm({
     if (!stripe || !elements) return
 
     setProcessing(true)
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: `${window.location.origin}/booking-bekreftelse` },
-      redirect: "if_required",
-    })
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: { return_url: `${window.location.origin}/booking-bekreftelse` },
+        redirect: "if_required",
+      })
 
-    if (error) {
-      onError(error.message || "Betalingen feilet. Prøv igjen.")
-      setProcessing(false)
-    } else if (paymentIntent?.status === "succeeded") {
-      onSuccess(paymentIntent.id)
-    } else {
-      onError("Uventet betalingsstatus. Kontakt support.")
+      if (error) {
+        onError(error.message || "Betalingen feilet. Prøv igjen.")
+        setProcessing(false)
+      } else if (paymentIntent?.status === "succeeded") {
+        onSuccess(paymentIntent.id)
+      } else {
+        onError("Uventet betalingsstatus. Kontakt support.")
+        setProcessing(false)
+      }
+    } catch (err: any) {
+      onError(err?.message || "En uventet feil oppsto under betaling. Prøv igjen.")
       setProcessing(false)
     }
   }
@@ -714,9 +719,9 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
             </div>
           )}
 
-          {/* STEG: Stripe betaling */}
-          {step === "payment" && clientSecret && (
-            <div className="px-6 py-5">
+          {/* STEG: Stripe betaling — holdes montert under "booking" for å unngå removeChild-feil */}
+          {(step === "payment" || step === "booking") && clientSecret && (
+            <div className={`px-6 py-5${step !== "payment" ? " hidden" : ""}`}>
               <p className="text-xs font-bold uppercase tracking-widest text-[var(--muted)] mb-4">Betalingsinformasjon</p>
               <Elements
                 key={clientSecret}

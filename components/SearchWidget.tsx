@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import HotelSearchForm from "./hotels/HotelSearchForm";
+import { encodeRoomCfg } from "@/lib/room-config";
 
 export default function SearchWidget() {
   const router = useRouter();
@@ -40,19 +41,13 @@ export default function SearchWidget() {
       {/* Søkeskjema — identisk med /hoteller */}
       <HotelSearchForm
         onSearch={(data) => {
-          const allChildAges = data.roomConfigs.flatMap(r => r.childAges);
-          const totalAdults = data.roomConfigs.reduce((s, r) => s + r.adults, 0);
-
           const params = new URLSearchParams({
             destinasjon: data.destination,
             ...(data.destinationId && { destinationId: data.destinationId }),
             ...(data.destinationType && { destinationType: data.destinationType }),
             checkIn: data.checkIn,
             checkOut: data.checkOut,
-            adults: String(totalAdults),
-            barn: String(allChildAges.length),
-            rooms: String(data.roomConfigs.length),
-            ...(allChildAges.length > 0 && { childAges: allChildAges.join(",") }),
+            roomCfg: encodeRoomCfg(data.roomConfigs),
             residency: data.residency,
           });
 

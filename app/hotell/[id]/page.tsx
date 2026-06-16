@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react"
 import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { decodeRoomCfg, encodeRoomCfg } from "@/lib/room-config"
+import ErrorBoundary from "@/components/ErrorBoundary"
 import Link from "next/link"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
@@ -1053,25 +1054,40 @@ function HotellInfoContent() {
 
       {/* Bestillingsmodal */}
       {bookingRoom && detail && searchDates.checkIn && (
-        <HotelBookingModal
-          room={bookingRoom}
-          hotel={{
-            id: detail.id || hotelId,
-            name: detail.name || (detail as any).hotel_name || name,
-            address: address || detail.address || "",
-            image: detail.image || images[0] || "",
-            star_rating: Number(detail.star_rating || detail.stars || 0),
-          }}
-          searchParams={{
-            checkIn: searchDates.checkIn,
-            checkOut: searchDates.checkOut,
-            adults: searchDates.adults,
-            children: searchDates.children,
-            roomCount: searchDates.roomConfigs.length,
-            roomConfigs: searchDates.roomConfigs,
-          }}
-          onClose={() => setBookingRoom(null)}
-        />
+        <ErrorBoundary
+          fallback={(err, reset) => (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60">
+              <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+                <p className="font-semibold text-red-600 mb-2">Noe gikk galt i bestillingen</p>
+                <p className="text-xs text-[var(--muted)] mb-4 font-mono break-all">{err.message}</p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={reset} className="px-4 py-2 rounded-xl bg-[var(--coral)] text-white text-sm font-semibold hover:opacity-90">Prøv igjen</button>
+                  <button onClick={() => { setBookingRoom(null); reset() }} className="px-4 py-2 rounded-xl border text-sm">Lukk</button>
+                </div>
+              </div>
+            </div>
+          )}
+        >
+          <HotelBookingModal
+            room={bookingRoom}
+            hotel={{
+              id: detail.id || hotelId,
+              name: detail.name || (detail as any).hotel_name || name,
+              address: address || detail.address || "",
+              image: detail.image || images[0] || "",
+              star_rating: Number(detail.star_rating || detail.stars || 0),
+            }}
+            searchParams={{
+              checkIn: searchDates.checkIn,
+              checkOut: searchDates.checkOut,
+              adults: searchDates.adults,
+              children: searchDates.children,
+              roomCount: searchDates.roomConfigs.length,
+              roomConfigs: searchDates.roomConfigs,
+            }}
+            onClose={() => setBookingRoom(null)}
+          />
+        </ErrorBoundary>
       )}
     </main>
   )

@@ -10,6 +10,7 @@ import HotelDetailModal from "@/components/hotels/HotelDetailModal"
 import HotelBookingModal from "@/components/hotels/HotelBookingModal"
 import { RateHawkHotel } from "@/lib/types"
 import { decodeRoomCfg } from "@/lib/room-config"
+import ErrorBoundary from "@/components/ErrorBoundary"
 
 interface SearchState {
   destination: string
@@ -395,22 +396,37 @@ function HotellPageContent() {
 
       {/* Booking modal */}
       {bookingRoom && bookingHotel && searchState && (
-        <HotelBookingModal
-          room={bookingRoom}
-          hotel={bookingHotel}
-          searchParams={{
-            checkIn: searchState.checkIn,
-            checkOut: searchState.checkOut,
-            adults: totalAdults,
-            children: allChildren,
-            roomCount: searchState.roomConfigs.length,
-            roomConfigs: searchState.roomConfigs,
-          }}
-          onClose={() => {
-            setBookingRoom(null)
-            setBookingHotel(null)
-          }}
-        />
+        <ErrorBoundary
+          fallback={(err, reset) => (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60">
+              <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+                <p className="font-semibold text-red-600 mb-2">Noe gikk galt i bestillingen</p>
+                <p className="text-xs text-[var(--muted)] mb-4 font-mono break-all">{err.message}</p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={reset} className="px-4 py-2 rounded-xl bg-[var(--coral)] text-white text-sm font-semibold hover:opacity-90">Prøv igjen</button>
+                  <button onClick={() => { setBookingRoom(null); setBookingHotel(null); reset() }} className="px-4 py-2 rounded-xl border text-sm">Lukk</button>
+                </div>
+              </div>
+            </div>
+          )}
+        >
+          <HotelBookingModal
+            room={bookingRoom}
+            hotel={bookingHotel}
+            searchParams={{
+              checkIn: searchState.checkIn,
+              checkOut: searchState.checkOut,
+              adults: totalAdults,
+              children: allChildren,
+              roomCount: searchState.roomConfigs.length,
+              roomConfigs: searchState.roomConfigs,
+            }}
+            onClose={() => {
+              setBookingRoom(null)
+              setBookingHotel(null)
+            }}
+          />
+        </ErrorBoundary>
       )}
     </main>
   )

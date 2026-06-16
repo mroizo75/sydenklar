@@ -465,7 +465,7 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
   }).format(customerTotal)
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" translate="no">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={step === "success" ? onClose : undefined} />
 
       <div className="relative bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">

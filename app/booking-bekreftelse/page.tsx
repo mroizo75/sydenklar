@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { getBookingByPartnerOrderId, linkBookingToUser } from '@/lib/users-db'
 import { auth } from '@/lib/auth'
+import { generateCancelToken } from '@/lib/cancel-token'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
@@ -256,7 +257,7 @@ async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
       {isConfirmed && (
         <div className="mt-6 text-center">
           <Link
-            href={`/avbestill?ref=${booking.partnerOrderId}`}
+            href={`/avbestill?ref=${booking.partnerOrderId}&token=${generateCancelToken(booking.partnerOrderId)}`}
             className="text-sm text-[var(--muted)] hover:text-red-600 transition-colors underline underline-offset-2"
           >
             Avbestill denne bookingen

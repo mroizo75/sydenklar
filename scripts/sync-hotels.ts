@@ -27,7 +27,7 @@ import {
   getLastSync,
 } from '../lib/hotel-static-db'
 
-const BASE_URL = (process.env.RATEHAWK_BASE_URL || 'https://api.worldota.net/api/b2b/v3').replace(/\/$/, '')
+const BASE_URL = (process.env.RATEHAWK_BASE_URL || 'https://api.ratehawk.com/api/b2b/v3').replace(/\/$/, '')
 const KEY_ID   = process.env.RATEHAWK_KEY_ID  || ''
 const API_KEY  = process.env.RATEHAWK_API_KEY || ''
 const DATA_DIR = path.join(process.cwd(), 'data')

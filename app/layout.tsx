@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
+import MetaPixel from "@/components/MetaPixel";
 
 const siteUrl = "https://www.sydenklar.no";
 
@@ -79,9 +80,6 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
   },
   manifest: "/manifest.json",
-  verification: {
-    google: "REPLACE_WITH_GOOGLE_VERIFICATION",
-  },
 };
 
 export default function RootLayout({
@@ -125,7 +123,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body><SessionProvider>{children}</SessionProvider></body>
+      <body><MetaPixel /><SessionProvider>{children}</SessionProvider></body>
     </html>
   );
 }

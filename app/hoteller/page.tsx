@@ -11,6 +11,7 @@ import HotelBookingModal from "@/components/hotels/HotelBookingModal"
 import { RateHawkHotel } from "@/lib/types"
 import { decodeRoomCfg } from "@/lib/room-config"
 import ErrorBoundary from "@/components/ErrorBoundary"
+import { trackSearch, trackViewContent, trackInitiateCheckout } from "@/lib/meta-pixel"
 
 interface SearchState {
   destination: string
@@ -119,6 +120,13 @@ function HotellPageContent() {
         setSearchTimestamp(Date.now())
         setSearchExpired(false)
         setSecondsLeft(SEARCH_TTL_S)
+        trackSearch({
+          search_string: data.destination,
+          content_category: "hotel",
+          checkin_date: data.checkIn,
+          checkout_date: data.checkOut,
+          num_adults: data.roomConfigs.reduce((s, r) => s + r.adults, 0),
+        })
         // Auto-åpne hotell fra URL-parameter (fra "Beste tilbud"-kort)
         if (urlHotelNavn) {
           const needle = urlHotelNavn.toLowerCase()
@@ -345,7 +353,16 @@ function HotellPageContent() {
                 residency: searchState.residency,
                 roomConfigs: searchState.roomConfigs,
               }}
-              onSelectHotel={hotel => setSelectedHotel(hotel)}
+              onSelectHotel={hotel => {
+                setSelectedHotel(hotel)
+                trackViewContent({
+                  content_name: hotel.name,
+                  content_ids: [hotel.id],
+                  content_type: "hotel",
+                  value: hotel.price.amount,
+                  currency: hotel.price.currency || "NOK",
+                })
+              }}
               onLoadMore={(newHotels, hasMore) => {
                 setResults(prev => prev ? {
                   ...prev,
@@ -390,6 +407,12 @@ function HotellPageContent() {
             setBookingRoom(room)
             setBookingHotel(hotelDetail)
             setSelectedHotel(null)
+            trackInitiateCheckout({
+              content_name: hotelDetail?.name || selectedHotel.name,
+              content_ids: [selectedHotel.id],
+              value: selectedHotel.price.amount,
+              currency: selectedHotel.price.currency || "NOK",
+            })
           }}
         />
       )}

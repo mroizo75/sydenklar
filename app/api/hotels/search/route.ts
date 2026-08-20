@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ratehawkClient } from '@/lib/ratehawk-client'
 import { RateHawkHotelSearchParams, SearchFilters } from '@/lib/types'
+import { sendServerEvent, extractUserData } from '@/lib/meta-capi'
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,6 +40,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    sendServerEvent(
+      'Search',
+      `https://www.sydenklar.no/hoteller`,
+      extractUserData(request),
+      {
+        search_string: body.destination || body.destinationId || '',
+        content_type: 'hotel',
+        checkin_date: body.checkIn,
+        checkout_date: body.checkOut,
+      },
+    )
 
     return NextResponse.json(result)
   } catch (error: unknown) {

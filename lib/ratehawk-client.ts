@@ -46,7 +46,7 @@ class RateHawkClient {
   constructor() {
     this.apiKey = process.env.RATEHAWK_KEY_ID || ''
     this.accessToken = process.env.RATEHAWK_API_KEY || ''
-    this.baseUrl = process.env.RATEHAWK_BASE_URL || 'https://api.worldota.net/api/b2b/v3'
+    this.baseUrl = process.env.RATEHAWK_BASE_URL || 'https://api.ratehawk.com/api/b2b/v3'
 
     if (!this.apiKey || !this.accessToken) {
       console.warn('⚠️ RateHawk credentials missing')

@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { generateCancelToken } from '@/lib/cancel-token'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import PurchasePixel from './PurchasePixel'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -97,6 +98,14 @@ async function BookingDetails({ partnerOrderId }: { partnerOrderId: string }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
+      {isConfirmed && booking.amount != null && (
+        <PurchasePixel
+          value={booking.amount}
+          currency={booking.currency || 'NOK'}
+          contentName={booking.hotelName || 'Hotell'}
+          contentId={partnerOrderId}
+        />
+      )}
       {/* Status header */}
       <div className="text-center mb-10">
         <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 ${isConfirmed ? 'bg-green-500' : 'bg-amber-400'}`}>

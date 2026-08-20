@@ -5,6 +5,7 @@ import { sendBookingConfirmationEmail, sendAdminBookingNotification } from '@/li
 import { getCurrentUserId } from '@/lib/auth'
 import { randomUUID } from 'crypto'
 import { applyMarkup } from '@/lib/pricing'
+import { sendServerEvent, extractUserData } from '@/lib/meta-capi'
 
 export async function POST(request: NextRequest) {
   try {
@@ -182,7 +183,20 @@ export async function POST(request: NextRequest) {
         cancellationPolicy: cancellationPolicy ?? undefined,
       })
 
-      // Intern varsling til admin
+      sendServerEvent(
+        'Purchase',
+        `https://www.sydenklar.no/booking-bekreftelse?ref=${partnerOrderId}`,
+        extractUserData(request, guestInfo.email),
+        {
+          content_name: hotelName || 'Hotell',
+          content_ids: [hotelId || partnerOrderId],
+          content_type: 'hotel',
+          value: amount != null ? parseFloat(String(amount)) : 0,
+          currency: currency || 'NOK',
+          num_items: 1,
+        },
+      )
+
       sendAdminBookingNotification({
         partnerOrderId,
         guestName: `${guestInfo.firstName} ${guestInfo.lastName}`,

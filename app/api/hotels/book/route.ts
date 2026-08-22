@@ -6,6 +6,7 @@ import { getCurrentUserId } from '@/lib/auth'
 import { randomUUID } from 'crypto'
 import { applyMarkup } from '@/lib/pricing'
 import { sendServerEvent, extractUserData } from '@/lib/meta-capi'
+import { insertServerEvent } from '@/lib/analytics-server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -196,6 +197,16 @@ export async function POST(request: NextRequest) {
           num_items: 1,
         },
       )
+
+      insertServerEvent('purchase', {
+        hotelId,
+        hotelName,
+        orderId: partnerOrderId,
+        amount: amount != null ? parseFloat(String(amount)) : 0,
+        currency: currency || 'NOK',
+        checkIn,
+        checkOut,
+      })
 
       sendAdminBookingNotification({
         partnerOrderId,

@@ -12,6 +12,7 @@ import { RateHawkHotel } from "@/lib/types"
 import { decodeRoomCfg } from "@/lib/room-config"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import { trackSearch, trackViewContent, trackInitiateCheckout } from "@/lib/meta-pixel"
+import { trackSearch as trackAnalyticsSearch, trackHotelClick, trackPrebook } from "@/lib/analytics"
 
 interface SearchState {
   destination: string
@@ -126,6 +127,11 @@ function HotellPageContent() {
           checkin_date: data.checkIn,
           checkout_date: data.checkOut,
           num_adults: data.roomConfigs.reduce((s, r) => s + r.adults, 0),
+        })
+        trackAnalyticsSearch(data.destination, {
+          checkIn: data.checkIn,
+          checkOut: data.checkOut,
+          rooms: data.roomConfigs.length,
         })
         // Auto-åpne hotell fra URL-parameter (fra "Beste tilbud"-kort)
         if (urlHotelNavn) {
@@ -355,6 +361,7 @@ function HotellPageContent() {
               }}
               onSelectHotel={hotel => {
                 setSelectedHotel(hotel)
+                trackHotelClick(hotel.id, hotel.name, { price: hotel.price.amount })
                 trackViewContent({
                   content_name: hotel.name,
                   content_ids: [hotel.id],
@@ -407,6 +414,7 @@ function HotellPageContent() {
             setBookingRoom(room)
             setBookingHotel(hotelDetail)
             setSelectedHotel(null)
+            trackPrebook(selectedHotel.id, { hotelName: selectedHotel.name, price: selectedHotel.price.amount })
             trackInitiateCheckout({
               content_name: hotelDetail?.name || selectedHotel.name,
               content_ids: [selectedHotel.id],

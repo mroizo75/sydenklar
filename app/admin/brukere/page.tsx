@@ -8,7 +8,7 @@ interface AdminUser {
   email: string
   firstName: string | null
   lastName: string | null
-  role: 'admin' | 'support'
+  role: 'admin' | 'support' | 'customer'
   createdAt: string
 }
 
@@ -63,6 +63,17 @@ export default function AdminBrukerePage() {
     if (!confirm(`Slett brukeren ${email}?`)) return
     await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
     setUsers(prev => prev.filter(u => u.id !== id))
+  }
+
+  async function handleRoleChange(id: string, newRole: string) {
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole }),
+    })
+    if (res.ok) {
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, role: newRole as AdminUser['role'] } : u))
+    }
   }
 
   return (
@@ -186,17 +197,24 @@ export default function AdminBrukerePage() {
                   </td>
                   <td style={{ padding: '14px 16px', color: '#374151' }}>{u.email}</td>
                   <td style={{ padding: '14px 16px' }}>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '3px 10px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      backgroundColor: u.role === 'admin' ? 'rgba(201,168,76,0.12)' : '#F3F4F6',
-                      color: u.role === 'admin' ? '#92750A' : '#374151',
-                    }}>
-                      {u.role}
-                    </span>
+                    <select
+                      value={u.role}
+                      onChange={e => handleRoleChange(u.id, e.target.value)}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        border: '1px solid #E5E7EB',
+                        backgroundColor: u.role === 'admin' ? 'rgba(201,168,76,0.12)' : u.role === 'support' ? '#F3F4F6' : '#FEF3C7',
+                        color: u.role === 'admin' ? '#92750A' : u.role === 'support' ? '#374151' : '#92400E',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="admin">Admin</option>
+                      <option value="support">Support</option>
+                      <option value="customer">Kunde</option>
+                    </select>
                   </td>
                   <td style={{ padding: '14px 16px', color: '#9CA3AF', fontSize: '13px' }}>
                     {fmtDate(u.createdAt)}

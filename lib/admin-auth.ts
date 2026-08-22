@@ -30,9 +30,11 @@ export async function requireAdminUser(): Promise<AdminUser> {
 
   const dbUser = await getUserByEmail(email)
 
-  // Bruker finnes i DB med en rolle — bruk den
   if (dbUser) {
-    const role = dbUser.role ?? 'support'
+    const role = dbUser.role ?? 'customer'
+    if (role !== 'admin' && role !== 'support') {
+      redirect('/')
+    }
     return { email, role, isAdmin: role === 'admin' }
   }
 

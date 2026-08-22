@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 import MetaPixel from "@/components/MetaPixel";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 
 const siteUrl = "https://www.sydenklar.no";
 
@@ -123,7 +124,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body><MetaPixel /><SessionProvider>{children}</SessionProvider></body>
+      <body><MetaPixel /><AnalyticsTracker /><SessionProvider>{children}</SessionProvider></body>
     </html>
   );
 }

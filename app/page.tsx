@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import BestDealsSection from "@/components/BestDealsSection";
+import HostferieSection from "@/components/HostferieSection";
 import DestinationsSection from "@/components/DestinationsSection";
 import WhySection from "@/components/WhySection";
 import HotelTypesSection from "@/components/HotelTypesSection";
@@ -30,6 +31,7 @@ export default function HomePage() {
       <Header />
       <HeroSection />
       <BestDealsSection />
+      <HostferieSection />
       <DestinationsSection />
       <WhySection />
       <HotelTypesSection />

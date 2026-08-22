@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ratehawkClient } from '@/lib/ratehawk-client'
+import { insertServerEvent } from '@/lib/analytics-server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +27,8 @@ export async function POST(request: NextRequest) {
     if (!result.success) {
       return NextResponse.json({ success: false, error: result.error || 'Failed to prebook rate' }, { status: 500 })
     }
+
+    insertServerEvent('payment', { bookHash, checkIn, checkOut, adults, rooms: rooms || 1 })
 
     return NextResponse.json({ success: true, prebookData: result.data })
   } catch (error: unknown) {

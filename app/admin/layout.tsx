@@ -36,6 +36,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <NavLink href="/admin/ny-bestilling">+ Ny bestilling</NavLink>
             {user.isAdmin && <NavLink href="/admin/brukere">Brukere</NavLink>}
             <NavLink href="/admin/nyhetsbrev">Nyhetsbrev</NavLink>
+            <NavLink href="/admin/statistikk">Statistikk</NavLink>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

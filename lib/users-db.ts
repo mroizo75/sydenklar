@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type UserRole = 'admin' | 'support'
+export type UserRole = 'admin' | 'support' | 'customer'
 
 export interface UserRecord {
   id: string
@@ -63,7 +63,7 @@ export async function createUser(params: {
       first_name: params.firstName ?? null,
       last_name: params.lastName ?? null,
       phone: params.phone ?? null,
-      role: params.role ?? 'support',
+      role: params.role ?? 'customer',
     })
     .select()
     .single()
@@ -83,6 +83,10 @@ export async function getAllUsers(): Promise<UserRecord[]> {
 
 export async function deleteUser(id: string): Promise<void> {
   await supabase.from('users').delete().eq('id', id)
+}
+
+export async function updateUserRole(id: string, role: UserRole): Promise<void> {
+  await supabase.from('users').update({ role }).eq('id', id)
 }
 
 export async function upsertUser(params: {

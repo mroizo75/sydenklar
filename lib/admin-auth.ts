@@ -28,6 +28,11 @@ export async function requireAdminUser(): Promise<AdminUser> {
 
   const email = session.user.email.toLowerCase()
 
+  // ADMIN_EMAILS-listen har alltid admin-tilgang (uansett DB-rolle)
+  if (ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.includes(email)) {
+    return { email, role: 'admin', isAdmin: true }
+  }
+
   const dbUser = await getUserByEmail(email)
 
   if (dbUser) {
@@ -36,11 +41,6 @@ export async function requireAdminUser(): Promise<AdminUser> {
       redirect('/')
     }
     return { email, role, isAdmin: role === 'admin' }
-  }
-
-  // Fallback: gammel ADMIN_EMAILS-sjekk (for bakoverkompatibilitet)
-  if (ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.includes(email)) {
-    return { email, role: 'admin', isAdmin: true }
   }
 
   redirect('/')

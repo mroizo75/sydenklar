@@ -11,6 +11,7 @@ interface HotelMapProps {
 }
 
 const FALLBACK_CENTER: [number, number] = [48.8566, 2.3522]
+const MAPTILER_API_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY
 
 function getCenter(hotels: RateHawkHotel[]): [number, number] {
   const withCoords = hotels.filter(h => h.lat && h.lng)
@@ -26,6 +27,7 @@ export default function HotelMap({ hotels, onSelectHotel, hoveredHotelId }: Hote
   const markersRef = useRef<Map<string, any>>(new Map())
   const [selectedHotel, setSelectedHotel] = useState<RateHawkHotel | null>(null)
   const [noCoords, setNoCoords] = useState(false)
+  const [mapError, setMapError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -36,6 +38,11 @@ export default function HotelMap({ hotels, onSelectHotel, hoveredHotelId }: Hote
     let localMap: any = null
 
     const init = async () => {
+      if (!MAPTILER_API_KEY) {
+        setMapError("Karttjenesten er ikke konfigurert")
+        return
+      }
+
       const L = (await import("leaflet")).default
       await import("leaflet/dist/leaflet.css")
 
@@ -70,10 +77,17 @@ export default function HotelMap({ hotels, onSelectHotel, hoveredHotelId }: Hote
 
       mapRef.current = localMap
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      const tileLayer = L.tileLayer(
+        `https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key=${encodeURIComponent(MAPTILER_API_KEY)}`,
+        {
+        attribution: '© <a href="https://www.maptiler.com/copyright/" target="_blank">MapTiler</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+        crossOrigin: true,
+        minZoom: 1,
         maxZoom: 19,
-      }).addTo(localMap)
+        },
+      )
+        .on("tileerror", () => setMapError("Kartet kunne ikke lastes"))
+        .addTo(localMap)
 
       markersRef.current = new Map()
       hotelsWithCoords.forEach(hotel => {
@@ -230,6 +244,16 @@ export default function HotelMap({ hotels, onSelectHotel, hoveredHotelId }: Hote
             <MapPin size={32} className="text-[var(--muted)] mx-auto mb-3" />
             <p className="text-sm font-medium text-[var(--deep)]">Koordinater ikke tilgjengelig</p>
             <p className="text-xs text-[var(--muted)] mt-1">Kartvisning krever koordinater fra API-et</p>
+          </div>
+        </div>
+      )}
+
+      {mapError && (
+        <div className="absolute inset-0 z-[500] flex items-center justify-center bg-[var(--sand-light)]">
+          <div className="text-center px-6">
+            <MapPin size={32} className="text-[var(--muted)] mx-auto mb-3" />
+            <p className="text-sm font-medium text-[var(--deep)]">{mapError}</p>
+            <p className="text-xs text-[var(--muted)] mt-1">Prøv igjen senere.</p>
           </div>
         </div>
       )}

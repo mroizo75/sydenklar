@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ratehawkClient } from '@/lib/ratehawk-client'
 import { createBooking, updateBookingStatus } from '@/lib/users-db'
+import { sendBookingConfirmationEmail, sendAdminBookingNotification } from '@/lib/email'
 import { getCurrentUserId } from '@/lib/auth'
 import { randomUUID } from 'crypto'
 import { applyMarkup } from '@/lib/pricing'
+import { sendServerEvent, extractUserData } from '@/lib/meta-capi'
+import { insertServerEvent } from '@/lib/analytics-server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
     const userId = await getCurrentUserId()
     const bookingId = randomUUID()
 
-    const createdBooking = await createBooking({
+    await createBooking({
       id: bookingId,
       partnerOrderId,
       userId: userId ?? null,
@@ -85,13 +88,6 @@ export async function POST(request: NextRequest) {
         ...(keysPickupInstructions ? { keysPickupInstructions } : {}),
       },
     })
-
-    if (!createdBooking) {
-      return NextResponse.json(
-        { success: false, error: 'Kunne ikke opprette bookingøkt. Kontakt support.' },
-        { status: 500 },
-      )
-    }
 
     // RateHawk finishBooking — paymentType.amount er nettopris (trekkes fra deposit)
     // amount er kundepris (inkl. bestillingsgebyr) lagret i DB
@@ -129,23 +125,112 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: userMessage }, { status: 500 })
     }
 
-    const bookingData = bookingResult.success ? bookingResult.data : undefined
-    const orderId = bookingData?.order_id
+    // Poll booking status (maks 36 forsøk)
+    const FINAL_ERRORS = ['block', 'charge', '3ds', 'soldout', 'provider', 'book_limit', 'not_allowed']
+    let attempts = 0
+    let finalStatus: any = null
+
+    while (attempts < 36) {
+      await new Promise(resolve => setTimeout(resolve, attempts === 0 ? 2000 : 5000))
+      const statusResult = await ratehawkClient.checkBookingStatus(partnerOrderId)
+
+      if (statusResult.status === 'ok') {
+        finalStatus = { ...statusResult, status: 'confirmed' as const }
+        break
+      } else if (statusResult.status === '3ds' || statusResult.error === '3ds') {
+        finalStatus = { ...statusResult, status: '3ds_required' as const }
+        break
+      } else if (statusResult.status === 'error' && FINAL_ERRORS.includes(statusResult.error || '')) {
+        finalStatus = { ...statusResult, status: 'failed' as const, error: 'En feil oppsto. Kontakt support.' }
+        break
+      }
+      attempts++
+    }
+
+    if (!finalStatus) {
+      finalStatus = { status: 'timeout', error: 'Booking status check timeout' }
+    }
+
+    const isSuccess = finalStatus.status === 'ok' || finalStatus.status === 'confirmed'
+    const orderId = (bookingResult as any).data?.order_id
+
     await updateBookingStatus(
       partnerOrderId,
-      'pending',
+      isSuccess ? 'confirmed' : finalStatus.status,
       orderId ?? undefined,
       stripePaymentIntentId ?? undefined,
     )
 
+    // Send bekreftelses-e-post ved suksess
+    if (isSuccess) {
+      const nights = checkIn && checkOut
+        ? Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))
+        : 0
+
+      await sendBookingConfirmationEmail({
+        to: guestInfo.email,
+        guestName: `${guestInfo.firstName} ${guestInfo.lastName}`,
+        hotelName: hotelName || 'Hotell',
+        roomName: roomName || 'Rom',
+        checkIn: checkIn || '',
+        checkOut: checkOut || '',
+        nights,
+        adults: adults ?? 0,
+        children: children ?? 0,
+        partnerOrderId,
+        amount: amount != null ? parseFloat(String(amount)) : 0,
+        currency: currency || 'NOK',
+        hotelAddress: hotelAddress ?? undefined,
+        cancellationPolicy: cancellationPolicy ?? undefined,
+      })
+
+      sendServerEvent(
+        'Purchase',
+        `https://www.sydenklar.no/booking-bekreftelse?ref=${partnerOrderId}`,
+        extractUserData(request, guestInfo.email),
+        {
+          content_name: hotelName || 'Hotell',
+          content_ids: [hotelId || partnerOrderId],
+          content_type: 'hotel',
+          value: amount != null ? parseFloat(String(amount)) : 0,
+          currency: currency || 'NOK',
+          num_items: 1,
+        },
+      )
+
+      insertServerEvent('purchase', {
+        hotelId,
+        hotelName,
+        orderId: partnerOrderId,
+        amount: amount != null ? parseFloat(String(amount)) : 0,
+        currency: currency || 'NOK',
+        checkIn,
+        checkOut,
+      })
+
+      sendAdminBookingNotification({
+        partnerOrderId,
+        guestName: `${guestInfo.firstName} ${guestInfo.lastName}`,
+        guestEmail: guestInfo.email,
+        hotelName: hotelName || 'Hotell',
+        checkIn: checkIn || '',
+        checkOut: checkOut || '',
+        adults: adults ?? 0,
+        amount: amount != null ? parseFloat(String(amount)) : 0,
+        currency: currency || 'NOK',
+      })
+    }
+
     return NextResponse.json({
-      success: true,
+      success: isSuccess,
       booking: {
         orderId,
-        partnerOrderId: bookingData?.partner_order_id,
-        status: 'pending',
-        itemId: bookingData?.item_id,
-        requires3DS: false,
+        partnerOrderId: (bookingResult as any).data?.partner_order_id,
+        status: finalStatus.status,
+        itemId: (bookingResult as any).data?.item_id,
+        requires3DS: finalStatus.status === '3ds_required',
+        data3DS: finalStatus.data?.data_3ds,
+        error: finalStatus.error,
       }
     })
   } catch (error: unknown) {

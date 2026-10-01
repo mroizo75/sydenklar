@@ -787,18 +787,18 @@ function HotellInfoContent() {
 
           {/* Hotellkort */}
           <div className="bg-white rounded-2xl border border-[var(--border)] overflow-hidden shadow-sm">
-            {infoLoading && images.length === 0 ? (
-              <div className="aspect-[16/7] bg-[var(--sand)]/50 animate-pulse flex items-center justify-center">
-                <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                  <div className="w-5 h-5 rounded-full border-2 border-[var(--coral)] border-t-transparent animate-spin" />
-                  Henter hotellbilder…
+            {infoLoading ? (
+              <div className="flex items-center justify-center py-24">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border-4 border-[var(--coral)] border-t-transparent animate-spin" style={{ borderWidth: 3 }} />
+                  <p className="text-sm text-[var(--muted)]">Henter hotellinfo…</p>
                 </div>
               </div>
             ) : (
-              <HotelGallery images={images} />
-            )}
+              <>
+                <HotelGallery images={images} />
 
-            <div className="p-6">
+                <div className="p-6">
                   {/* Hotelltittel */}
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
                     <div>
@@ -1028,6 +1028,8 @@ function HotellInfoContent() {
                     </div>
                   )}
                 </div>
+              </>
+            )}
           </div>
 
           {/* CTA nederst */}

@@ -28,11 +28,6 @@ interface SerpCacheEntry {
   createdAt: number
 }
 
-interface HotelInfoOptions {
-  allowRemote?: boolean
-  requireComplete?: boolean
-}
-
 // Fester cachen til globalThis så den overlever HMR (hot module reload) i dev-modus.
 // I produksjon er dette ekvivalent med en vanlig modul-scope variabel.
 const SERP_CACHE_TTL_MS = 30 * 60 * 1000
@@ -47,7 +42,6 @@ class RateHawkClient {
   private hotelDumpCache: Map<string, any> = new Map()
   private dumpLastFetched: number | null = null
   private hotelInfoCache: Map<string, any | null> = new Map()
-  private hotelInfoRequests: Map<string, Promise<any | null>> = new Map()
 
   constructor() {
     this.apiKey = process.env.RATEHAWK_KEY_ID || ''
@@ -273,8 +267,7 @@ class RateHawkClient {
             try {
               staticInfo = await this.getHotelStaticInfo(
                 hotelId.toString(),
-                typeof hotelId === 'number' ? hotelId : undefined,
-                { allowRemote: true, requireComplete: false }
+                typeof hotelId === 'number' ? hotelId : undefined
               )
             } catch {
               // Continue without static info
@@ -406,7 +399,7 @@ class RateHawkClient {
           }
         })
 
-        const processedHotels = await runWithConcurrency(hotelTasks, 6)
+        const processedHotels = await runWithConcurrency(hotelTasks, 3)
         hotels.push(...processedHotels)
       }
 
@@ -478,8 +471,7 @@ class RateHawkClient {
         try {
           staticInfo = await this.getHotelStaticInfo(
             hotelId.toString(),
-            typeof hotelId === 'number' ? hotelId : undefined,
-            { allowRemote: true, requireComplete: false }
+            typeof hotelId === 'number' ? hotelId : undefined
           )
         } catch { /* skip */ }
       }
@@ -538,7 +530,7 @@ class RateHawkClient {
       }
     })
 
-    const enriched = await runWithConcurrency(tasks, 6)
+    const enriched = await runWithConcurrency(tasks, 3)
     return {
       success: true,
       hotels: enriched,
@@ -581,89 +573,61 @@ class RateHawkClient {
     return knownCoordinates[destination] || knownCoordinates[regionId] || { lat: 59.9139, lon: 10.7522 }
   }
 
-  private async getHotelStaticInfo(
-    hotelId?: string,
-    hid?: number,
-    options: HotelInfoOptions = {}
-  ): Promise<any> {
+  private async getHotelStaticInfo(hotelId?: string, hid?: number): Promise<any> {
     const cacheKey = hid ? `hid:${hid}` : `id:${hotelId}`
-    const allowRemote = options.allowRemote ?? true
-    const requireComplete = options.requireComplete ?? true
 
-    if (allowRemote && this.hotelInfoCache.has(cacheKey)) {
+    if (this.hotelInfoCache.has(cacheKey)) {
       return this.hotelInfoCache.get(cacheKey)
     }
 
-    let localResult: any = null
     try {
       let record = hid ? getHotelByHid(hid) : null
       if (!record && hotelId) record = getHotelById(hotelId)
-      if (record) {
-        localResult = recordToApiFormat(record)
-        if (!requireComplete) {
-          const hasName = !!(localResult.name || localResult.hotel_name)
-          const hasImages = Array.isArray(localResult.images) && localResult.images.length > 0
-          const hasLatitude = localResult.latitude !== undefined && !isNaN(parseFloat(String(localResult.latitude)))
-          const hasLongitude = localResult.longitude !== undefined && !isNaN(parseFloat(String(localResult.longitude)))
-          if (hasName && hasImages && hasLatitude && hasLongitude) {
-            return localResult
-          }
-        }
-
-        if (requireComplete && record.room_groups !== undefined) {
-          const hasCoords = localResult.latitude !== undefined && !isNaN(parseFloat(String(localResult.latitude)))
-          const hasDescription = !!(localResult.description_struct || localResult.description)
-          if (hasCoords && hasDescription) {
-            this.hotelInfoCache.set(cacheKey, localResult)
-            return localResult
-          }
+      if (record && record.room_groups !== undefined) {
+        const result = recordToApiFormat(record)
+        // Returner kun fra SQLite-cache hvis koordinater OG beskrivelse finnes.
+        // Ellers fall gjennom til API-kall for å hente oppdatert data.
+        const hasCoords = result.latitude !== undefined && !isNaN(parseFloat(String(result.latitude)))
+        const hasDescription = !!(result.description_struct || result.description)
+        if (hasCoords && hasDescription) {
+          this.hotelInfoCache.set(cacheKey, result)
+          return result
         }
       }
     } catch (dbError: any) {
       console.warn('SQLite lookup failed:', dbError.message)
     }
 
-    if (!allowRemote) return localResult
-    if (!this.apiKey || !this.accessToken) return localResult
+    try {
+      if (!this.apiKey || !this.accessToken) return null
 
-    const pendingRequest = this.hotelInfoRequests.get(cacheKey)
-    if (pendingRequest) return pendingRequest
-
-    const request = (async () => {
-      try {
-        const params: any = { language: 'en' }
-        if (hid) {
-          params.hid = hid
-        } else if (hotelId) {
-          params.id = hotelId
-        } else {
-          return localResult
-        }
-
-        const data = await this.makeRequest('/hotel/info/', params, 'POST')
-        const result = data?.data ?? localResult
-
-        if (data?.data) {
-          try {
-            upsertHotelBatch([data.data])
-          } catch {
-            // Ignore write errors
-          }
-        }
-
-        this.hotelInfoCache.set(cacheKey, result)
-        return result
-      } catch (error: any) {
-        console.warn('/hotel/info/ failed:', error.message)
-        this.hotelInfoCache.set(cacheKey, localResult)
-        return localResult
-      } finally {
-        this.hotelInfoRequests.delete(cacheKey)
+      const params: any = { language: 'en' }
+      if (hid) {
+        params.hid = hid
+      } else if (hotelId) {
+        params.id = hotelId
+      } else {
+        return null
       }
-    })()
 
-    this.hotelInfoRequests.set(cacheKey, request)
-    return request
+      const data = await this.makeRequest('/hotel/info/', params, 'POST')
+      const result = data?.data ?? null
+
+      if (result) {
+        try {
+          upsertHotelBatch([result])
+        } catch {
+          // Ignore write errors
+        }
+      }
+
+      this.hotelInfoCache.set(cacheKey, result)
+      return result
+    } catch (error: any) {
+      console.warn('/hotel/info/ failed:', error.message)
+      this.hotelInfoCache.set(cacheKey, null)
+      return null
+    }
   }
 
   private normalizeImageUrl(raw: string): string {
@@ -896,13 +860,11 @@ class RateHawkClient {
         throw new Error('Either hotelId or hid is required')
       }
 
-      const [data, staticInfo] = await Promise.all([
-        this.makeRequest('/search/hp/', requestParams, 'POST'),
-        this.getHotelStaticInfo(params.hotelId, params.hid),
-      ])
+      const data = await this.makeRequest('/search/hp/', requestParams, 'POST')
 
       if (data?.data?.hotels && data.data.hotels.length > 0) {
         const hotelData = data.data.hotels[0]
+        const staticInfo = await this.getHotelStaticInfo(params.hotelId, params.hid)
 
         const hotelName = staticInfo?.name || staticInfo?.hotel_name || hotelData.name || hotelData.hotel_name || 'Hotell'
         const hotelAddress = staticInfo ? [
@@ -925,9 +887,12 @@ class RateHawkClient {
         }
 
         const starRating = staticInfo?.star_rating || staticInfo?.stars || hotelData.star_rating || hotelData.stars || 0
-        const reviews = staticInfo?.reviews && Array.isArray(staticInfo.reviews)
-          ? this.parseReviews(staticInfo.reviews)
-          : []
+        let reviews: any[] = []
+        try {
+          reviews = await this.getHotelReviews(params.hotelId || params.hid?.toString() || '')
+        } catch {
+          // No reviews available
+        }
 
         const rawGroups: any[] = staticInfo?.room_groups || []
         const normalizeImageUrl = (raw: string) => this.normalizeImageUrl(raw)

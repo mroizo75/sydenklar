@@ -366,6 +366,55 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
     await handleFinishBooking(prebookData!, stripePaymentIntentId)
   }
 
+  const pollBookingStatus = async (
+    partnerOrderId: string,
+    initialBooking: Record<string, unknown>
+  ) => {
+    for (let attempt = 0; attempt < 36; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 2000 : 5000))
+
+      try {
+        const response = await fetch("/api/hotels/booking-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ partnerOrderId }),
+        })
+        const statusData = await response.json()
+
+        if (statusData.status === "confirmed" || statusData.status === "ok") {
+          setBookingResult({
+            ...initialBooking,
+            ...statusData.data,
+            status: "confirmed",
+          })
+          setStep("success")
+          return
+        }
+
+        if (statusData.status === "3ds_required" || statusData.requires3DS) {
+          setBookingResult({
+            ...initialBooking,
+            requires3DS: true,
+            data3DS: statusData.data3DS || statusData.data?.data_3ds,
+          })
+          setStep("3ds")
+          return
+        }
+
+        if (statusData.status === "failed") {
+          setError(statusData.error || "Bookingen kunne ikke bekreftes.")
+          setStep("error")
+          return
+        }
+      } catch {
+        // Midlertidige statusfeil prøves igjen innenfor samme bookingøkt.
+      }
+    }
+
+    setError("Bookingen behandles fortsatt. Kontakt support dersom du ikke mottar bekreftelse.")
+    setStep("error")
+  }
+
   const handleFinishBooking = async (prebook: any, stripePaymentId: string) => {
     setStep("booking")
     try {
@@ -439,7 +488,10 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
       const data = await res.json()
 
       if (data.success) {
-        if (data.booking?.requires3DS && data.booking?.data3DS) {
+        if (data.booking?.status === "pending") {
+          setBookingResult(data.booking)
+          await pollBookingStatus(partnerOrderId, data.booking)
+        } else if (data.booking?.requires3DS && data.booking?.data3DS) {
           setBookingResult(data.booking)
           setStep("3ds")
         } else {
@@ -480,7 +532,12 @@ export default function HotelBookingModal({ room, hotel, searchParams, onClose }
              step === "prebook" || step === "booking" ? "Behandler..." :
              "Fullfør booking"}
           </h2>
-          <button onClick={onClose} className="w-9 h-9 rounded-full bg-[var(--sand-light)] hover:bg-[var(--sand)] flex items-center justify-center transition-colors">
+          <button
+            onClick={onClose}
+            disabled={step === "booking"}
+            aria-label="Lukk"
+            className="w-9 h-9 rounded-full bg-[var(--sand-light)] hover:bg-[var(--sand)] flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <X size={18} />
           </button>
         </div>

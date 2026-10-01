@@ -274,7 +274,7 @@ class RateHawkClient {
               staticInfo = await this.getHotelStaticInfo(
                 hotelId.toString(),
                 typeof hotelId === 'number' ? hotelId : undefined,
-                { allowRemote: false, requireComplete: false }
+                { allowRemote: true, requireComplete: false }
               )
             } catch {
               // Continue without static info
@@ -406,7 +406,7 @@ class RateHawkClient {
           }
         })
 
-        const processedHotels = await runWithConcurrency(hotelTasks, 3)
+        const processedHotels = await runWithConcurrency(hotelTasks, 6)
         hotels.push(...processedHotels)
       }
 
@@ -479,7 +479,7 @@ class RateHawkClient {
           staticInfo = await this.getHotelStaticInfo(
             hotelId.toString(),
             typeof hotelId === 'number' ? hotelId : undefined,
-            { allowRemote: false, requireComplete: false }
+            { allowRemote: true, requireComplete: false }
           )
         } catch { /* skip */ }
       }
@@ -538,7 +538,7 @@ class RateHawkClient {
       }
     })
 
-    const enriched = await runWithConcurrency(tasks, 3)
+    const enriched = await runWithConcurrency(tasks, 6)
     return {
       success: true,
       hotels: enriched,
@@ -601,10 +601,16 @@ class RateHawkClient {
       if (record) {
         localResult = recordToApiFormat(record)
         if (!requireComplete) {
-          return localResult
+          const hasName = !!(localResult.name || localResult.hotel_name)
+          const hasImages = Array.isArray(localResult.images) && localResult.images.length > 0
+          const hasLatitude = localResult.latitude !== undefined && !isNaN(parseFloat(String(localResult.latitude)))
+          const hasLongitude = localResult.longitude !== undefined && !isNaN(parseFloat(String(localResult.longitude)))
+          if (hasName && hasImages && hasLatitude && hasLongitude) {
+            return localResult
+          }
         }
 
-        if (record.room_groups !== undefined) {
+        if (requireComplete && record.room_groups !== undefined) {
           const hasCoords = localResult.latitude !== undefined && !isNaN(parseFloat(String(localResult.latitude)))
           const hasDescription = !!(localResult.description_struct || localResult.description)
           if (hasCoords && hasDescription) {

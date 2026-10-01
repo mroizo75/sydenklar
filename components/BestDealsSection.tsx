@@ -179,7 +179,7 @@ function DealCard({ deal, checkIn, checkOut }: { deal: Deal; checkIn: string; ch
   return (
     <Link
       href={href}
-      className="group flex-none w-72 sm:w-80 h-[420px] bg-white rounded-2xl ring-1 ring-[var(--border)] card-hover flex flex-col text-left cursor-pointer"
+      className="group flex-none w-[82vw] max-w-80 h-[410px] sm:h-[420px] bg-white rounded-2xl ring-1 ring-[var(--border)] card-hover flex flex-col text-left cursor-pointer"
     >
       {/* Bilde – fast høyde */}
       <div className="relative overflow-hidden rounded-t-2xl shrink-0" style={{ height: '200px' }}>
@@ -310,7 +310,6 @@ export default function BestDealsSection() {
     }, 0)
 
     return () => clearInterval(interval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const sync = () => {
@@ -336,15 +335,15 @@ export default function BestDealsSection() {
     scrollRef.current?.scrollBy({ left: dir === 'right' ? CARD_W : -CARD_W, behavior: 'smooth' })
 
   return (
-    <section className="bg-[var(--sand-light)] py-20 lg:py-28">
+    <section className="bg-[var(--sand-light)] py-14 sm:py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7 sm:mb-10">
           <div>
             <span className="text-[var(--coral)] text-xs font-semibold uppercase tracking-widest">
               Eksklusive priser
             </span>
-            <h2 className="font-display text-4xl lg:text-5xl text-[var(--deep)] mt-2">
+            <h2 className="font-display text-[2rem] sm:text-4xl lg:text-5xl text-[var(--deep)] leading-tight mt-2">
               Beste tilbud
               <br />
               <em className="italic">akkurat nå</em>
@@ -364,21 +363,21 @@ export default function BestDealsSection() {
             )}
           </div>
 
-          <a
+          <Link
             href="/hoteller"
-            className="text-sm font-semibold text-[var(--sea)] hover:text-[var(--deep)] transition-colors flex items-center gap-1.5 shrink-0 animated-link"
+            className="min-h-11 text-sm font-semibold text-[var(--sea)] hover:text-[var(--deep)] transition-colors flex items-center gap-1.5 shrink-0 animated-link"
           >
             Se alle hoteller
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </a>
+          </Link>
         </div>
 
         {/* Karusell */}
         <div className="group/carousel relative">
           {canLeft && (
-            <div className="absolute left-0 top-0 bottom-4 w-20 z-20 flex items-center justify-start pl-2 cursor-pointer"
+            <div className="hidden sm:flex absolute left-0 top-0 bottom-4 w-20 z-20 items-center justify-start pl-2 cursor-pointer"
               onClick={() => scroll('left')}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--sand-light)] via-[var(--sand-light)]/60 to-transparent" />
@@ -392,7 +391,7 @@ export default function BestDealsSection() {
           )}
 
           {canRight && (
-            <div className="absolute right-0 top-0 bottom-4 w-20 z-20 flex items-center justify-end pr-2 cursor-pointer"
+            <div className="hidden sm:flex absolute right-0 top-0 bottom-4 w-20 z-20 items-center justify-end pr-2 cursor-pointer"
               onClick={() => scroll('right')}
             >
               <div className="absolute inset-0 bg-gradient-to-l from-[var(--sand-light)] via-[var(--sand-light)]/60 to-transparent" />

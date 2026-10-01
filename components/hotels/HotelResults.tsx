@@ -106,7 +106,7 @@ export default function HotelResults({
           <button
             key={stars}
             onClick={() => setMinStars(stars)}
-            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${
+            className={`min-h-11 text-sm font-medium px-4 py-2 rounded-xl transition-colors ${
               minStars === stars
                 ? "bg-[var(--deep)] text-white"
                 : "bg-[var(--sand-light)] text-[var(--deep)] border border-[var(--border)] hover:border-[var(--deep)]"
@@ -127,7 +127,7 @@ export default function HotelResults({
       <button
         onClick={handleLoadMore}
         disabled={loadingMore}
-        className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-[var(--deep)] text-white font-medium text-sm hover:bg-[var(--deep)]/90 transition-colors disabled:opacity-60"
+        className="min-h-12 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-2xl bg-[var(--deep)] text-white font-medium text-sm hover:bg-[var(--deep)]/90 transition-colors disabled:opacity-60"
       >
         {loadingMore ? (
           <>
@@ -230,12 +230,12 @@ export default function HotelResults({
             av{" "}
             <span className="font-semibold text-[var(--deep)]">{totalResults}</span> hoteller
           </p>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto sm:items-center sm:flex-wrap">
             {/* Liste/Kart-toggle */}
-            <div className="flex items-center rounded-xl border border-[var(--border)] overflow-hidden">
+            <div className="col-span-2 sm:col-span-1 grid grid-cols-2 sm:flex items-center rounded-xl border border-[var(--border)] overflow-hidden">
               <button
                 onClick={() => setViewMode("list")}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                className={`min-h-11 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
                   viewMode === "list"
                     ? "bg-[var(--deep)] text-white"
                     : "text-[var(--deep)] hover:bg-[var(--sand-light)]"
@@ -245,7 +245,7 @@ export default function HotelResults({
               </button>
               <button
                 onClick={() => setViewMode("map")}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                className={`min-h-11 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
                   viewMode === "map"
                     ? "bg-[var(--deep)] text-white"
                     : "text-[var(--deep)] hover:bg-[var(--sand-light)]"
@@ -259,7 +259,7 @@ export default function HotelResults({
               <>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border transition-colors ${
+                  className={`min-h-11 flex items-center justify-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border transition-colors ${
                     showFilters
                       ? "bg-[var(--deep)] text-white border-[var(--deep)]"
                       : "border-[var(--border)] text-[var(--deep)] hover:border-[var(--deep)]"
@@ -268,12 +268,13 @@ export default function HotelResults({
                   <SlidersHorizontal size={15} />
                   Filter
                 </button>
-                <div className="flex items-center gap-2 border border-[var(--border)] rounded-xl px-3 py-2">
+                <div className="min-w-0 min-h-11 flex items-center gap-2 border border-[var(--border)] rounded-xl px-3 py-2">
                   <ArrowUpDown size={14} className="text-[var(--muted)] shrink-0" />
                   <select
                     value={sortKey}
                     onChange={e => setSortKey(e.target.value as SortKey)}
-                    className="text-sm text-[var(--deep)] bg-transparent outline-none cursor-pointer"
+                    aria-label="Sorter hoteller"
+                    className="min-w-0 w-full text-sm text-[var(--deep)] bg-transparent outline-none cursor-pointer"
                   >
                     {SORT_OPTIONS.map(o => (
                       <option key={o.value} value={o.value}>{o.label}</option>
@@ -289,7 +290,7 @@ export default function HotelResults({
 
         {/* Kartvisning */}
         {viewMode === "map" && (
-          <div style={{ height: "calc(100vh - 280px)", minHeight: 420 }}>
+          <div className="overflow-hidden rounded-2xl border border-[var(--border)]" style={{ height: "calc(100svh - 240px)", minHeight: 420 }}>
             <HotelMap hotels={sortedAndFiltered} onSelectHotel={onSelectHotel} />
           </div>
         )}
@@ -304,7 +305,7 @@ export default function HotelResults({
           ) : (
             <>
               {/* Mobil: vertikal liste / Tablet: 2 kolonner */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {sortedAndFiltered.map(hotel => (
                   <HotelCard
                     key={hotel.id}
@@ -312,7 +313,7 @@ export default function HotelResults({
                     onSelect={onSelectHotel}
                     onHover={setHoveredHotelId}
                     searchParams={searchParams}
-                    variant="horizontal"
+                    variant="vertical"
                   />
                 ))}
               </div>

@@ -46,6 +46,7 @@ body {
   font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.6;
+  overflow-x: clip;
 }
 
 h1, h2, h3, h4 {
@@ -121,9 +122,11 @@ a, button {
 .card-hover {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 60px rgba(15, 25, 35, 0.15);
+@media (hover: hover) and (pointer: fine) {
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(15, 25, 35, 0.15);
+  }
 }
 
 /* Animated underline */
@@ -142,6 +145,19 @@ a, button {
 }
 .animated-link:hover::after {
   width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Prose styles for legal/content pages */

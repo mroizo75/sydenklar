@@ -12,11 +12,11 @@ export default function SearchWidget() {
   return (
     <div className="w-full">
       {/* Fane-velger */}
-      <div className="flex gap-1 mb-3">
+      <div className="grid grid-cols-2 gap-1 p-1 mb-3 bg-black/20 backdrop-blur-sm rounded-2xl sm:flex sm:w-fit sm:bg-transparent sm:p-0">
         <button
           type="button"
           onClick={() => setActiveTab("hotell")}
-          className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+          className={`min-h-11 flex items-center justify-center gap-2 px-4 py-2 rounded-xl sm:rounded-full text-sm font-semibold transition-all ${
             activeTab === "hotell"
               ? "bg-white text-[var(--deep)] shadow-lg shadow-black/10"
               : "text-white/70 hover:text-white"
@@ -28,7 +28,7 @@ export default function SearchWidget() {
           <button
             type="button"
             disabled
-            className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold text-white/40 cursor-not-allowed"
+            className="min-h-11 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl sm:rounded-full text-sm font-semibold text-white/45 cursor-not-allowed"
           >
             ✈️ Pakkereiser
           </button>

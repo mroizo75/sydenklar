@@ -37,14 +37,14 @@ const features = [
 
 export default function WhySection() {
   return (
-    <section className="bg-[var(--sand-light)] py-20 lg:py-28">
+    <section className="bg-[var(--sand-light)] py-14 sm:py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-left sm:text-center max-w-2xl mx-auto mb-8 sm:mb-14">
           <span className="text-[var(--coral)] text-xs font-semibold uppercase tracking-widest">
             Hvorfor Sydenklar
           </span>
-          <h2 className="font-display text-4xl lg:text-5xl text-[var(--deep)] mt-3">
+          <h2 className="font-display text-[2rem] sm:text-4xl lg:text-5xl text-[var(--deep)] mt-3">
             Reise gjort <em className="italic">enkelt</em>
           </h2>
           <p className="text-[var(--muted)] mt-4 text-base leading-relaxed">
@@ -54,13 +54,13 @@ export default function WhySection() {
         </div>
 
         {/* Features grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 overflow-x-auto sm:overflow-visible snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           {features.map((f) => {
             const Icon = f.icon;
             return (
               <div
                 key={f.title}
-                className="bg-white rounded-2xl p-7 flex flex-col gap-4 group card-hover border border-[var(--border)]"
+                className="flex-none w-[80vw] sm:w-auto bg-white rounded-2xl p-6 sm:p-7 flex flex-col gap-4 group card-hover border border-[var(--border)] snap-start"
               >
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -86,7 +86,7 @@ export default function WhySection() {
         </div>
 
         {/* CTA Banner */}
-        <div className="mt-12 rounded-3xl bg-[var(--deep)] overflow-hidden relative">
+        <div className="mt-10 sm:mt-12 rounded-3xl bg-[var(--deep)] overflow-hidden relative">
           {/* Background accent */}
           <div
             className="absolute top-0 right-0 w-1/2 h-full opacity-10"
@@ -94,7 +94,7 @@ export default function WhySection() {
               background: "radial-gradient(ellipse at 80% 50%, var(--coral) 0%, transparent 70%)",
             }}
           />
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 p-8 lg:p-12">
+          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-6 sm:p-8 lg:p-12">
             <div>
               <h3 className="font-display text-3xl lg:text-4xl text-white">
                 Klar for din neste ferie?
@@ -106,7 +106,7 @@ export default function WhySection() {
             </div>
             <a
               href="#søk"
-              className="shrink-0 bg-[var(--coral)] hover:bg-[var(--coral-dark)] text-white font-semibold text-sm px-8 py-4 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[var(--coral)]/30 whitespace-nowrap"
+              className="min-h-12 w-full sm:w-auto shrink-0 bg-[var(--coral)] hover:bg-[var(--coral-dark)] text-white font-semibold text-sm px-8 py-4 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[var(--coral)]/30 whitespace-nowrap text-center"
             >
               Søk hoteller nå
             </a>

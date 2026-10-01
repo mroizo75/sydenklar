@@ -25,11 +25,7 @@ const popularSearches = [
 export default function HeroSection() {
   const [bgIndex, setBgIndex] = useState(0);
   const [fading, setFading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = true;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -78,7 +74,7 @@ export default function HeroSection() {
       </div>{/* /overflow-hidden wrapper */}
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col flex-1 pt-24 lg:pt-32">
+      <div className="relative z-10 flex flex-col flex-1 pt-20 pb-10 sm:pt-24 sm:pb-0 lg:pt-32">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex flex-col flex-1">
           {/* Badge */}
           <div
@@ -87,20 +83,20 @@ export default function HeroSection() {
             }`}
             style={{ transitionDelay: "100ms" }}
           >
-            <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-medium tracking-wider uppercase px-4 py-2 rounded-full">
+            <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-[10px] sm:text-xs font-semibold tracking-[0.08em] uppercase px-3 py-2 sm:px-4 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse" />
-              Over 2 millioner hoteller verden over
+              2 millioner+ hoteller verden over
             </span>
           </div>
 
           {/* Headline */}
           <div
-            className={`mt-6 transition-all duration-700 ${
+            className={`mt-5 sm:mt-6 transition-all duration-700 ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
             }`}
             style={{ transitionDelay: "200ms" }}
           >
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-7xl xl:text-8xl text-white leading-[1.05] max-w-3xl">
+            <h1 className="font-display text-[2.65rem] sm:text-5xl lg:text-7xl xl:text-8xl text-white leading-[1.02] max-w-3xl">
               Finn hotellet
               <br />
               <em className="italic text-[var(--gold)]">du drømmer om</em>
@@ -109,20 +105,21 @@ export default function HeroSection() {
 
           {/* Subheadline */}
           <div
-            className={`mt-5 transition-all duration-700 ${
+            className={`mt-4 sm:mt-5 transition-all duration-700 ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
             }`}
             style={{ transitionDelay: "350ms" }}
           >
-            <p className="text-white/70 text-base sm:text-lg max-w-xl leading-relaxed">
-              Sammenlign tusenvis av hoteller — fra sjarmerende butikkhoteller
-              til eksklusive resorter. Alltid best pris, alltid enkelt.
+            <p className="text-white/75 text-[15px] sm:text-lg max-w-xl leading-relaxed">
+              Sammenlign tusenvis av hoteller og finn riktig opphold til riktig pris.
+              <span className="hidden sm:inline"> Fra sjarmerende butikkhoteller til eksklusive resorter.</span>
             </p>
           </div>
 
           {/* Search Widget */}
           <div
-            className={`mt-10 transition-all duration-700 relative z-10 ${
+            id="søk"
+            className={`mt-6 sm:mt-10 transition-all duration-700 relative z-10 scroll-mt-24 ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
             style={{ transitionDelay: "500ms" }}
@@ -132,19 +129,19 @@ export default function HeroSection() {
 
           {/* Popular searches */}
           <div
-            className={`mt-5 flex flex-wrap items-center gap-2 transition-all duration-700 ${
+            className={`mt-4 flex items-center gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap transition-all duration-700 ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
             style={{ transitionDelay: "650ms" }}
           >
-            <span className="text-white/50 text-xs font-medium">
+            <span className="text-white/50 text-xs font-medium shrink-0">
               Populære:
             </span>
             {popularSearches.map((place) => (
               <a
                 key={place}
                 href={`/hoteller?destinasjon=${encodeURIComponent(place)}`}
-                className="text-xs font-medium text-white/70 hover:text-white border border-white/20 hover:border-white/50 px-3 py-1.5 rounded-full transition-all backdrop-blur-sm"
+                className="min-h-9 inline-flex items-center text-xs font-medium text-white/75 hover:text-white border border-white/20 hover:border-white/50 px-3 py-1.5 rounded-full transition-all backdrop-blur-sm whitespace-nowrap shrink-0"
               >
                 {place}
               </a>
@@ -153,7 +150,7 @@ export default function HeroSection() {
 
           {/* Stats bar */}
           <div
-            className={`mt-auto pb-10 pt-16 transition-all duration-700 ${
+            className={`hidden sm:block mt-auto pb-10 pt-16 transition-all duration-700 ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
             style={{ transitionDelay: "800ms" }}
@@ -180,7 +177,7 @@ export default function HeroSection() {
       </div>
 
       {/* Slide indicators */}
-      <div className="absolute bottom-6 right-6 z-10 flex items-center gap-1.5">
+      <div className="absolute bottom-6 right-6 z-10 hidden sm:flex items-center gap-1.5">
         {heroBgs.map((_, i) => (
           <button
             key={i}

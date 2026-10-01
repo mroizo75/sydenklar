@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 import NewsletterSignup from "@/components/NewsletterSignup"
 
 const footerLinks = {
@@ -33,19 +34,19 @@ export default function Footer() {
   return (
     <footer className="bg-[var(--deep)] border-t border-white/5">
       {/* Main footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-10 lg:gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-x-6 gap-y-10 lg:gap-12">
           {/* Brand */}
-          <div className="sm:col-span-2 lg:col-span-2">
-            <a href="/" className="flex items-start mb-5">
+          <div className="col-span-2 lg:col-span-2">
+            <Link href="/" className="flex items-start mb-5">
               <Image
                 src="/logo-hvit.png"
                 alt="Sydenklar.no"
                 width={500}
                 height={200}
-                className="w-full max-w-[320px] h-auto object-contain"
+                className="w-full max-w-[220px] sm:max-w-[280px] h-auto object-contain"
               />
-            </a>
+            </Link>
             <p className="text-white/50 text-sm leading-relaxed max-w-xs">
               Din tryggeste vei til verdens beste hoteller. Sammenlign, velg og
               bestill — alt på ett sted.
@@ -61,7 +62,7 @@ export default function Footer() {
                   key={s.name}
                   href={`https://www.${s.name.toLowerCase()}.com/sydenklar`}
                   aria-label={`Sydenklar på ${s.name}`}
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white text-xs font-bold transition-all"
+                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white text-xs font-bold transition-all"
                 >
                   {s.icon}
                 </a>
@@ -91,7 +92,7 @@ export default function Footer() {
       </div>
 
       {/* Newsletter bar */}
-      <div className="border-t border-white/5">
+      <div className="hidden sm:block border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-10">
             <div className="shrink-0">
@@ -166,7 +167,7 @@ export default function Footer() {
       {/* Copyright bar */}
       <div className="border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-white/30 text-xs">
+          <p className="text-white/30 text-xs" suppressHydrationWarning>
             © {new Date().getFullYear()} Sydenklar AS. Alle rettigheter reservert.
           </p>
           <div className="flex items-center gap-4">

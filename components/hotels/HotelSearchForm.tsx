@@ -152,12 +152,12 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
     setSuggestions([])
   }
 
-  const updateRoom = (roomIndex: number, field: "adults" | "childAges", value: any) => {
+  const updateRoom = (roomIndex: number, field: "adults" | "childAges", value: number | number[]) => {
     setRoomConfigs(prev => {
       const updated = [...prev]
-      if (field === "adults") {
+      if (field === "adults" && typeof value === "number") {
         updated[roomIndex] = { ...updated[roomIndex], adults: Math.max(1, value) }
-      } else {
+      } else if (field === "childAges" && Array.isArray(value)) {
         updated[roomIndex] = { ...updated[roomIndex], childAges: value }
       }
       return updated
@@ -224,8 +224,8 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
   }
 
   /* Delt gjestevelger-panel — brukes i begge moduser */
-  const GuestPickerPanel = () => (
-    <div className="absolute top-full right-0 mt-1 w-[min(20rem,calc(100vw-2rem))] bg-white rounded-xl shadow-2xl shadow-black/15 border border-[var(--border)] p-4 z-50">
+  const renderGuestPickerPanel = () => (
+    <div className="fixed inset-x-4 bottom-4 max-h-[70svh] overflow-y-auto sm:absolute sm:inset-x-auto sm:bottom-auto sm:top-full sm:right-0 sm:mt-1 sm:w-[min(20rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl shadow-black/20 border border-[var(--border)] p-4 z-[60]">
       {roomConfigs.map((room, roomIdx) => (
         <div key={roomIdx} className="mb-4 last:mb-0">
           <div className="flex items-center justify-between mb-3">
@@ -244,12 +244,12 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
             </div>
             <div className="flex items-center gap-2.5">
               <button type="button" onClick={() => updateRoom(roomIdx, "adults", room.adults - 1)}
-                className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--deep)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition-colors">
+                className="w-11 h-11 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--deep)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition-colors">
                 <Minus size={13} />
               </button>
               <span className="w-5 text-center text-sm font-bold text-[var(--deep)]">{room.adults}</span>
               <button type="button" onClick={() => updateRoom(roomIdx, "adults", room.adults + 1)}
-                className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--deep)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition-colors">
+                className="w-11 h-11 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--deep)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition-colors">
                 <Plus size={13} />
               </button>
             </div>
@@ -263,13 +263,13 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
             <div className="flex items-center gap-2.5">
               <button type="button" onClick={() => removeChild(roomIdx, room.childAges.length - 1)}
                 disabled={room.childAges.length === 0}
-                className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--deep)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                className="w-11 h-11 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--deep)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 <Minus size={13} />
               </button>
               <span className="w-5 text-center text-sm font-bold text-[var(--deep)]">{room.childAges.length}</span>
               <button type="button" onClick={() => addChild(roomIdx)}
                 disabled={room.childAges.length >= 4}
-                className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--deep)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                className="w-11 h-11 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--deep)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 <Plus size={13} />
               </button>
             </div>
@@ -299,7 +299,7 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
       )}
 
       <button type="button" onClick={() => setShowGuestPicker(false)}
-        className="w-full mt-3 py-2 text-sm font-semibold bg-[var(--deep)] hover:bg-[var(--coral)] text-white rounded-xl transition-colors">
+        className="w-full min-h-12 mt-3 py-2 text-sm font-semibold bg-[var(--deep)] hover:bg-[var(--coral)] text-white rounded-xl transition-colors">
         Bekreft
       </button>
     </div>
@@ -310,12 +310,12 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
   ───────────────────────────────────────────── */
   if (compact) {
     return (
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg shadow-black/10 px-2 py-1">
-        <div className="flex items-center gap-0">
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg shadow-black/10 p-2">
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:items-center lg:gap-0">
 
           {/* Destinasjon */}
-          <div className="flex-[2] relative min-w-0" ref={destRef}>
-            <div className="flex items-center gap-2 px-3 py-2.5">
+          <div className="col-span-2 flex-[2] relative min-w-0 rounded-xl bg-[var(--sand-light)]/70 lg:bg-transparent" ref={destRef}>
+            <div className="min-h-12 flex items-center gap-2 px-3 py-2.5">
               <MapPin size={13} className="text-[var(--coral)] shrink-0" />
               <input
                 type="text"
@@ -349,50 +349,50 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
             )}
           </div>
 
-          <div className="w-px bg-[var(--border)] self-stretch my-2 shrink-0" />
+          <div className="hidden lg:block w-px bg-[var(--border)] self-stretch my-2 shrink-0" />
 
           {/* Innsjekk */}
-          <div className="flex items-center gap-2 px-3 py-2.5 shrink-0">
+          <div className="min-w-0 min-h-12 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--sand-light)]/70 lg:bg-transparent lg:rounded-none lg:shrink-0">
             <Calendar size={13} className="text-[var(--muted)] shrink-0" />
             <input
               type="date"
               value={checkIn}
               onChange={e => setCheckIn(e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="text-[var(--deep)] text-sm font-medium bg-transparent outline-none [color-scheme:light] w-[128px]"
+              className="min-w-0 w-full lg:w-[128px] text-[var(--deep)] text-xs sm:text-sm font-medium bg-transparent outline-none [color-scheme:light]"
               required
             />
           </div>
 
-          <div className="w-px bg-[var(--border)] self-stretch my-2 shrink-0" />
+          <div className="hidden lg:block w-px bg-[var(--border)] self-stretch my-2 shrink-0" />
 
           {/* Utsjekk */}
-          <div className="flex items-center gap-2 px-3 py-2.5 shrink-0">
+          <div className="min-w-0 min-h-12 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--sand-light)]/70 lg:bg-transparent lg:rounded-none lg:shrink-0">
             <Calendar size={13} className="text-[var(--muted)] shrink-0" />
             <input
               type="date"
               value={checkOut}
               onChange={e => setCheckOut(e.target.value)}
               min={checkIn || new Date().toISOString().split("T")[0]}
-              className="text-[var(--deep)] text-sm font-medium bg-transparent outline-none [color-scheme:light] w-[128px]"
+              className="min-w-0 w-full lg:w-[128px] text-[var(--deep)] text-xs sm:text-sm font-medium bg-transparent outline-none [color-scheme:light]"
               required
             />
           </div>
 
-          <div className="w-px bg-[var(--border)] self-stretch my-2 shrink-0" />
+          <div className="hidden lg:block w-px bg-[var(--border)] self-stretch my-2 shrink-0" />
 
           {/* Gjester */}
-          <div className="relative shrink-0" ref={guestRef}>
+          <div className="col-span-2 relative rounded-xl bg-[var(--sand-light)]/70 lg:bg-transparent lg:rounded-none lg:shrink-0" ref={guestRef}>
             <button type="button" onClick={() => setShowGuestPicker(!showGuestPicker)}
-              className="flex items-center gap-1.5 px-3 py-2.5 whitespace-nowrap">
+              className="min-h-12 w-full flex items-center gap-1.5 px-3 py-2.5 whitespace-nowrap">
               <Users size={13} className="text-[var(--muted)] shrink-0" />
               <span className="text-[var(--deep)] text-sm font-medium">{guestLabel}</span>
               <ChevronDown size={12} className={`text-[var(--muted)] transition-transform ${showGuestPicker ? "rotate-180" : ""}`} />
             </button>
-            {showGuestPicker && <GuestPickerPanel />}
+            {showGuestPicker && renderGuestPickerPanel()}
           </div>
 
-          <div className="w-px bg-[var(--border)] self-stretch my-2 shrink-0" />
+          <div className="hidden lg:block w-px bg-[var(--border)] self-stretch my-2 shrink-0" />
 
           {/* Pass – skjult på mobil */}
           <div className="hidden lg:flex items-center gap-1.5 px-3 py-2.5 shrink-0">
@@ -406,12 +406,12 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
           {/* Søk-knapp */}
           <button type="submit"
             disabled={loading || !destination || !checkIn || !checkOut}
-            className="flex items-center gap-1.5 bg-[var(--coral)] hover:bg-[var(--coral-dark)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm px-4 py-2 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0 ml-1 whitespace-nowrap">
+            className="col-span-2 min-h-12 flex items-center justify-center gap-1.5 bg-[var(--coral)] hover:bg-[var(--coral-dark)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] lg:shrink-0 lg:ml-1 whitespace-nowrap">
             {loading
               ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
               : <Search size={15} />
             }
-            <span className="hidden sm:inline">{loading ? "Søker..." : "Søk"}</span>
+            <span>{loading ? "Søker..." : "Søk"}</span>
           </button>
         </div>
       </form>
@@ -422,11 +422,11 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
      NORMAL-MODUS: full form (forsiden / tom tilstand)
   ───────────────────────────────────────────── */
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl shadow-black/10 p-4">
-      <div className="flex flex-col lg:flex-row gap-2">
+    <form onSubmit={handleSubmit} className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-black/15 p-3 sm:p-4">
+      <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2">
 
         {/* Destinasjon */}
-        <div className="flex-[2] relative" ref={destRef}>
+        <div className="col-span-2 lg:col-span-1 flex-[2] relative rounded-xl bg-[var(--sand-light)]/70 border border-[var(--border)] lg:bg-transparent lg:border-0" ref={destRef}>
           <label className="block px-4 pt-3 pb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Destinasjon</span>
           </label>
@@ -471,7 +471,7 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
         <div className="w-px bg-[var(--border)] hidden lg:block self-stretch my-2" />
 
         {/* Innsjekk */}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1 rounded-xl bg-[var(--sand-light)]/70 border border-[var(--border)] lg:bg-transparent lg:border-0">
           <label className="block px-4 pt-3 pb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Innsjekk</span>
           </label>
@@ -482,7 +482,7 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
               value={checkIn}
               onChange={e => setCheckIn(e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full text-[var(--deep)] text-sm font-medium bg-transparent outline-none [color-scheme:light]"
+              className="min-w-0 w-full text-[var(--deep)] text-[13px] sm:text-sm font-medium bg-transparent outline-none [color-scheme:light]"
               required
             />
           </div>
@@ -491,7 +491,7 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
         <div className="w-px bg-[var(--border)] hidden lg:block self-stretch my-2" />
 
         {/* Utsjekk */}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1 rounded-xl bg-[var(--sand-light)]/70 border border-[var(--border)] lg:bg-transparent lg:border-0">
           <label className="block px-4 pt-3 pb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Utsjekk</span>
           </label>
@@ -502,7 +502,7 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
               value={checkOut}
               onChange={e => setCheckOut(e.target.value)}
               min={checkIn || new Date().toISOString().split("T")[0]}
-              className="w-full text-[var(--deep)] text-sm font-medium bg-transparent outline-none [color-scheme:light]"
+              className="min-w-0 w-full text-[var(--deep)] text-[13px] sm:text-sm font-medium bg-transparent outline-none [color-scheme:light]"
               required
             />
           </div>
@@ -511,17 +511,17 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
         <div className="w-px bg-[var(--border)] hidden lg:block self-stretch my-2" />
 
         {/* Gjester */}
-        <div className="flex-1 relative" ref={guestRef}>
+        <div className="min-w-0 flex-1 relative rounded-xl bg-[var(--sand-light)]/70 border border-[var(--border)] lg:bg-transparent lg:border-0" ref={guestRef}>
           <label className="block px-4 pt-3 pb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Gjester</span>
           </label>
           <button type="button" onClick={() => setShowGuestPicker(!showGuestPicker)}
-            className="flex items-center gap-2 px-4 pb-3 w-full text-left">
+            className="min-h-9 flex items-center gap-2 px-4 pb-3 w-full text-left">
             <Users size={15} className="text-[var(--muted)] shrink-0" />
             <span className="flex-1 text-[var(--deep)] text-sm font-medium truncate">{guestLabel}</span>
             <ChevronDown size={13} className={`text-[var(--muted)] transition-transform ${showGuestPicker ? "rotate-180" : ""}`} />
           </button>
-          {showGuestPicker && <GuestPickerPanel />}
+          {showGuestPicker && renderGuestPickerPanel()}
         </div>
 
         <div className="w-px bg-[var(--border)] hidden lg:block self-stretch my-2" />
@@ -541,14 +541,14 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
         </div>
 
         {/* Nasjonalitet – mobil */}
-        <div className="lg:hidden">
+        <div className="min-w-0 lg:hidden rounded-xl bg-[var(--sand-light)]/70 border border-[var(--border)]">
           <label className="block px-4 pt-3 pb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--coral)]">Nasjonalitet (pass)</span>
           </label>
           <div className="flex items-center gap-2 px-4 pb-3">
             <Globe size={15} className="text-[var(--muted)] shrink-0" />
             <select value={residency} onChange={e => setResidency(e.target.value)}
-              className="w-full text-[var(--deep)] text-sm font-medium bg-transparent outline-none cursor-pointer">
+              className="min-w-0 w-full text-[var(--deep)] text-[13px] sm:text-sm font-medium bg-transparent outline-none cursor-pointer">
               {RESIDENCY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
@@ -557,7 +557,7 @@ export default function HotelSearchForm({ onSearch, loading = false, initialValu
         {/* Søk-knapp */}
         <button type="submit"
           disabled={loading || !destination || !checkIn || !checkOut}
-          className="flex items-center justify-center gap-2 bg-[var(--coral)] hover:bg-[var(--coral-dark)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm px-7 py-4 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0 shadow-lg shadow-[var(--coral)]/25 whitespace-nowrap">
+          className="col-span-2 min-h-14 flex items-center justify-center gap-2 bg-[var(--coral)] hover:bg-[var(--coral-dark)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-base lg:text-sm px-7 py-4 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0 shadow-lg shadow-[var(--coral)]/25 whitespace-nowrap">
           {loading
             ? <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
             : <Search size={18} />

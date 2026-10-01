@@ -46,7 +46,7 @@ export default function NewsletterSignup({ variant = 'light', className = '' }: 
   }
 
   const inputBase =
-    'w-full rounded-full px-4 py-3 text-sm outline-none border focus:ring-2 transition-all'
+    'w-full min-h-12 rounded-full px-4 py-3 text-sm outline-none border focus:ring-2 transition-all'
   const inputLight =
     'bg-white border-[var(--border)] text-[var(--deep)] placeholder-[var(--muted)] focus:ring-[var(--coral)]/30 focus:border-[var(--coral)]'
   const inputDark =
@@ -76,7 +76,7 @@ export default function NewsletterSignup({ variant = 'light', className = '' }: 
           <button
             type="submit"
             disabled={status === 'loading'}
-            className="flex-shrink-0 bg-[var(--coral)] hover:bg-[var(--coral-dark)] disabled:opacity-60 text-white font-medium px-6 py-3 rounded-full transition-colors text-sm whitespace-nowrap"
+            className="min-h-12 flex-shrink-0 bg-[var(--coral)] hover:bg-[var(--coral-dark)] disabled:opacity-60 text-white font-semibold px-6 py-3 rounded-full transition-colors text-sm whitespace-nowrap"
           >
             {status === 'loading' ? 'Sender…' : 'Meld meg på'}
           </button>

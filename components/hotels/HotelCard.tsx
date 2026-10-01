@@ -223,7 +223,7 @@ function VerticalCard({ hotel, onSelect, onHover, searchParams }: { hotel: RateH
       onKeyDown={e => { if (e.key === "Enter") onSelect(hotel) }}
       aria-label={`Se detaljer for ${hotel.name}`}
     >
-      <div className="relative overflow-hidden bg-[var(--sand-light)] aspect-[16/10]">
+      <div className="relative overflow-hidden bg-[var(--sand-light)] aspect-[16/9] sm:aspect-[16/10]">
         {hasImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -251,8 +251,8 @@ function VerticalCard({ hotel, onSelect, onHover, searchParams }: { hotel: RateH
         )}
       </div>
 
-      <div className="p-4">
-        <h3 className="font-display text-base text-[var(--deep)] leading-tight line-clamp-2 group-hover:text-[var(--coral)] transition-colors">
+      <div className="p-4 sm:p-5">
+        <h3 className="font-display text-lg text-[var(--deep)] leading-tight line-clamp-2 group-hover:text-[var(--coral)] transition-colors">
           {hotel.name}
         </h3>
 
@@ -285,11 +285,12 @@ function VerticalCard({ hotel, onSelect, onHover, searchParams }: { hotel: RateH
           </div>
         )}
 
-        <div className="flex items-end justify-between mt-4 pt-3 border-t border-[var(--border)]">
-          <div>
+        <div className="mt-4 pt-3 border-t border-[var(--border)]">
+          <div className="flex items-end justify-between gap-3">
+            <div>
             <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">Fra</p>
             <div className="flex items-baseline gap-1">
-              <span className="font-display text-xl text-[var(--deep)]">
+              <span className="font-display text-2xl text-[var(--deep)]">
                 {hotel.price.amount.toLocaleString("nb-NO")}
               </span>
               <span className="text-xs text-[var(--muted)]">{hotel.price.currency}/natt</span>
@@ -305,11 +306,13 @@ function VerticalCard({ hotel, onSelect, onHover, searchParams }: { hotel: RateH
                 <span className="text-[10px] font-medium text-green-700">Gratis avbestilling</span>
               </div>
             )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="grid grid-cols-2 gap-2 mt-4">
             <button
               onClick={e => { e.stopPropagation(); onSelect(hotel) }}
-              className="bg-[var(--coral)] hover:bg-[var(--deep)] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all"
+              className="min-h-12 bg-[var(--coral)] hover:bg-[var(--deep)] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all"
             >
               Vis tilbud
             </button>
@@ -317,9 +320,9 @@ function VerticalCard({ hotel, onSelect, onHover, searchParams }: { hotel: RateH
             <Link
               href={hotelInfoUrl(hotel, searchParams)}
               onClick={e => e.stopPropagation()}
-              className="text-[11px] font-medium text-[var(--sea)] hover:text-[var(--deep)] hover:underline transition-colors whitespace-nowrap"
+              className="min-h-12 flex items-center justify-center rounded-xl border border-[var(--border)] text-xs font-semibold text-[var(--sea)] hover:text-[var(--deep)] hover:border-[var(--deep)] transition-colors whitespace-nowrap"
             >
-              Se hotellet →
+              Hotellinfo →
             </Link>
           </div>
         </div>

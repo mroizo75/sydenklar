@@ -59,15 +59,15 @@ const destinations = [
 
 export default function DestinationsSection() {
   return (
-    <section className="bg-white py-20 lg:py-28">
+    <section className="bg-white py-14 sm:py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7 sm:mb-12">
           <div>
             <span className="text-[var(--coral)] text-xs font-semibold uppercase tracking-widest">
               Populære destinasjoner
             </span>
-            <h2 className="font-display text-4xl lg:text-5xl text-[var(--deep)] mt-2">
+            <h2 className="font-display text-[2rem] sm:text-4xl lg:text-5xl text-[var(--deep)] leading-tight mt-2">
               Drømmesteder
               <br />
               <em className="italic">venter på deg</em>
@@ -75,7 +75,7 @@ export default function DestinationsSection() {
           </div>
           <a
             href="/destinasjoner"
-            className="text-sm font-semibold text-[var(--sea)] hover:text-[var(--deep)] transition-colors flex items-center gap-1.5 shrink-0 animated-link"
+            className="min-h-11 text-sm font-semibold text-[var(--sea)] hover:text-[var(--deep)] transition-colors flex items-center gap-1.5 shrink-0 animated-link"
           >
             Se alle destinasjoner
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -85,15 +85,14 @@ export default function DestinationsSection() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 overflow-x-auto sm:overflow-visible snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           {destinations.map((dest, i) => (
             <a
               key={dest.name}
               href={`/hoteller?destinasjon=${encodeURIComponent(dest.name)}`}
-              className={`group relative overflow-hidden rounded-2xl card-hover ${
-                i === 0 ? "sm:col-span-2 lg:col-span-1 lg:row-span-2" : ""
+              className={`group relative overflow-hidden rounded-2xl card-hover flex-none w-[82vw] min-h-[280px] sm:w-auto sm:min-h-[220px] snap-start ${
+                i === 0 ? "sm:col-span-2 sm:min-h-[420px] lg:col-span-1 lg:row-span-2" : ""
               }`}
-              style={{ minHeight: i === 0 ? "420px" : "220px" }}
             >
               {/* Image */}
               <div className="absolute inset-0">

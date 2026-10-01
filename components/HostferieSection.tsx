@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 
 const DESTINATIONS = [
@@ -29,14 +30,14 @@ const DESTINATIONS = [
 
 export default function HostferieSection() {
   return (
-    <section className="bg-[var(--sand-light)] py-20 lg:py-28">
+    <section className="bg-[var(--sand-light)] py-14 sm:py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7 sm:mb-12">
           <div>
             <span className="text-[var(--coral)] text-xs font-semibold uppercase tracking-widest">
               Høstferie 2026
             </span>
-            <h2 className="font-display text-4xl lg:text-5xl text-[var(--deep)] mt-2">
+            <h2 className="font-display text-[2rem] sm:text-4xl lg:text-5xl text-[var(--deep)] leading-tight mt-2">
               Slipper du unna
               <br />
               <em className="italic">den norske høsten?</em>
@@ -44,7 +45,7 @@ export default function HostferieSection() {
           </div>
           <Link
             href="/hostferie"
-            className="text-sm font-semibold text-[var(--sea)] hover:text-[var(--deep)] transition-colors flex items-center gap-1.5 shrink-0"
+            className="min-h-11 text-sm font-semibold text-[var(--sea)] hover:text-[var(--deep)] transition-colors flex items-center gap-1.5 shrink-0"
           >
             Se alle høstferie-mål
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -53,20 +54,20 @@ export default function HostferieSection() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 overflow-x-auto sm:overflow-visible snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           {DESTINATIONS.map((dest) => (
             <Link
               key={dest.slug}
               href={`/hostferie/${dest.slug}`}
-              className="group relative overflow-hidden rounded-2xl"
-              style={{ minHeight: "260px" }}
+              className="group relative overflow-hidden rounded-2xl flex-none w-[78vw] sm:w-auto min-h-[230px] sm:min-h-[260px] snap-start"
             >
               <div className="absolute inset-0">
-                <img
+                <Image
                   src={dest.image}
                   alt={`Høstferie ${dest.name}`}
+                  fill
+                  sizes="(max-width: 639px) 78vw, (max-width: 1023px) 50vw, 25vw"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -94,7 +95,7 @@ export default function HostferieSection() {
           </p>
           <Link
             href="/hoteller?destinasjon=Gran%20Canaria&checkIn=2026-10-03&checkOut=2026-10-10&adults=2&rooms=1"
-            className="inline-flex items-center gap-2 bg-[var(--coral)] hover:bg-[var(--coral-dark)] text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
+            className="min-h-12 w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[var(--coral)] hover:bg-[var(--coral-dark)] text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
           >
             Søk høstferie-hoteller
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

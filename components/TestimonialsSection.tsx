@@ -27,24 +27,24 @@ const testimonials = [
 
 export default function TestimonialsSection() {
   return (
-    <section className="bg-white py-20 lg:py-28">
+    <section className="bg-white py-14 sm:py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-xl mx-auto mb-12">
+        <div className="text-left sm:text-center max-w-xl mx-auto mb-8 sm:mb-12">
           <span className="text-[var(--coral)] text-xs font-semibold uppercase tracking-widest">
             Hva gjestene sier
           </span>
-          <h2 className="font-display text-4xl lg:text-5xl text-[var(--deep)] mt-3">
+          <h2 className="font-display text-[2rem] sm:text-4xl lg:text-5xl text-[var(--deep)] leading-tight mt-3">
             Ekte opplevelser,
             <br />
             <em className="italic">ekte historier</em>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex md:grid md:grid-cols-3 gap-4 sm:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
           {testimonials.map((t) => (
             <div
               key={t.name}
-              className="bg-[var(--sand-light)] rounded-2xl p-7 flex flex-col gap-5 border border-[var(--border)] card-hover"
+              className="flex-none w-[82vw] md:w-auto bg-[var(--sand-light)] rounded-2xl p-6 sm:p-7 flex flex-col gap-5 border border-[var(--border)] card-hover snap-start"
             >
               {/* Stars */}
               <div className="flex gap-1">
@@ -78,15 +78,15 @@ export default function TestimonialsSection() {
         </div>
 
         {/* Trust badges */}
-        <div className="mt-14 flex flex-wrap justify-center items-center gap-8 lg:gap-16">
+        <div className="mt-10 sm:mt-14 grid grid-cols-3 items-start gap-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-8 lg:gap-16">
           {[
             { value: "4.8/5", label: "Snittkarakter fra 120 000+ anmeldelser" },
             { value: "800K+", label: "Norske brukere" },
             { value: "98%", label: "Vil anbefale Sydenklar" },
           ].map((badge) => (
             <div key={badge.label} className="text-center">
-              <p className="font-display text-3xl text-[var(--deep)]">{badge.value}</p>
-              <p className="text-[var(--muted)] text-xs mt-1 max-w-[140px]">{badge.label}</p>
+              <p className="font-display text-2xl sm:text-3xl text-[var(--deep)]">{badge.value}</p>
+              <p className="text-[var(--muted)] text-[10px] sm:text-xs leading-snug mt-1 max-w-[140px]">{badge.label}</p>
             </div>
           ))}
         </div>

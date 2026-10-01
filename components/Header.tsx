@@ -17,6 +17,11 @@ interface HeaderProps {
   solid?: boolean
 }
 
+interface SessionUser {
+  firstName?: string
+  name?: string | null
+}
+
 export default function Header({ solid = false }: HeaderProps) {
   const [scrolled, setScrolled] = useState(solid);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,25 +35,43 @@ export default function Header({ solid = false }: HeaderProps) {
     return () => window.removeEventListener("scroll", handler);
   }, [solid]);
 
+  useEffect(() => {
+    if (!menuOpen) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false)
+    }
+
+    document.body.style.overflow = "hidden"
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = ""
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [menuOpen])
+
   const isLoggedIn = status === "authenticated" && !!session?.user;
-  const firstName = (session?.user as any)?.firstName ?? session?.user?.name?.split(" ")[0];
+  const sessionUser = session?.user as SessionUser | undefined
+  const firstName = sessionUser?.firstName ?? sessionUser?.name?.split(" ")[0]
+  const showSolidHeader = scrolled || menuOpen
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 overflow-visible ${
-        scrolled ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-transparent"
+        showSolidHeader ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-transparent"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 lg:h-20">
+        <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center group shrink-0">
             <Image
-              src={scrolled ? "/logo-svart.png" : "/logo-hvit.png"}
+              src={showSolidHeader ? "/logo-svart.png" : "/logo-hvit.png"}
               alt="Sydenklar.no"
               width={500}
               height={200}
-              className="h-24 w-auto object-contain transition-opacity duration-300 group-hover:opacity-80"
+              className="w-[172px] sm:w-[200px] lg:w-[240px] h-auto max-h-14 lg:max-h-20 object-contain transition-opacity duration-300 group-hover:opacity-80"
               priority
             />
           </Link>
@@ -125,26 +148,29 @@ export default function Header({ solid = false }: HeaderProps) {
 
           {/* Mobile Menu Button */}
           <button
-            className={`lg:hidden p-2 rounded-lg transition-colors ${
-              scrolled ? "text-[var(--deep)]" : "text-white"
+            className={`lg:hidden w-11 h-11 flex items-center justify-center rounded-full transition-colors ${
+              showSolidHeader
+                ? "text-[var(--deep)] bg-[var(--sand-light)]"
+                : "text-white bg-black/15 backdrop-blur-sm"
             }`}
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Åpne meny"
+            aria-label={menuOpen ? "Lukk meny" : "Åpne meny"}
+            aria-expanded={menuOpen}
           >
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="lg:hidden bg-white border-t border-[var(--border)] shadow-lg" role="dialog" aria-modal="true">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
+        <div className="lg:hidden absolute inset-x-0 top-full h-[calc(100svh-4rem)] bg-white border-t border-[var(--border)] overflow-y-auto" role="dialog" aria-modal="true" aria-label="Hovedmeny">
+          <div className="px-4 pt-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col gap-2">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center justify-between px-4 py-3 rounded-xl text-[var(--deep)] font-medium hover:bg-[var(--sand-light)] transition-colors"
+                className="min-h-14 flex items-center justify-between px-4 py-3 rounded-2xl text-[var(--deep)] text-lg font-medium hover:bg-[var(--sand-light)] transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
@@ -155,7 +181,7 @@ export default function Header({ solid = false }: HeaderProps) {
                 )}
               </Link>
             ))}
-            <div className="border-t border-[var(--border)] mt-2 pt-4 flex flex-col gap-2">
+            <div className="border-t border-[var(--border)] mt-3 pt-5 flex flex-col gap-3">
               {isLoggedIn ? (
                 <>
                   <Link
@@ -175,18 +201,18 @@ export default function Header({ solid = false }: HeaderProps) {
               ) : (
                 <>
                   <Link
-                    href="/logg-inn"
-                    className="px-4 py-3 text-center text-[var(--deep)] font-medium rounded-xl border border-[var(--border)] hover:bg-[var(--sand-light)] transition-colors"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Logg inn
-                  </Link>
-                  <Link
-                    href="/logg-inn"
-                    className="px-4 py-3 text-center bg-[var(--deep)] text-white font-semibold rounded-xl hover:bg-[var(--coral)] transition-colors"
+                    href="/logg-inn?tab=register"
+                    className="min-h-12 px-4 py-3 text-center bg-[var(--deep)] text-white font-semibold rounded-xl hover:bg-[var(--coral)] transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
                     Registrer deg
+                  </Link>
+                  <Link
+                    href="/logg-inn"
+                    className="min-h-12 px-4 py-3 text-center text-[var(--deep)] font-medium rounded-xl border border-[var(--border)] hover:bg-[var(--sand-light)] transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Logg inn
                   </Link>
                 </>
               )}

@@ -3,7 +3,7 @@ import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Presserom | Sydenklar',
+  title: 'Presserom',
   description: 'Pressekontakt, om Sydenklar og selskapsfakta for journalister og medier.',
   alternates: { canonical: 'https://www.sydenklar.no/presse' },
 }

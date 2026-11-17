@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Karriere | Sydenklar',
+  title: 'Karriere',
   description: 'Bli en del av Sydenklar — en norsk reiseportal i vekst. Se ledige stillinger eller send åpen søknad.',
   alternates: { canonical: 'https://www.sydenklar.no/karriere' },
 }

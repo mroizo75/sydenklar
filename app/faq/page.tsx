@@ -3,9 +3,10 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import FaqAccordion from '@/components/FaqAccordion'
 import type { Metadata } from 'next'
+import { buildFaqSchema } from '@/lib/seo'
 
 export const metadata: Metadata = {
-  title: 'Ofte stilte spørsmål (FAQ) | Sydenklar',
+  title: 'Ofte stilte spørsmål',
   description: 'Svar på de vanligste spørsmålene om hotellbooking, betaling, avbestilling og mer på Sydenklar.no.',
   alternates: { canonical: 'https://www.sydenklar.no/faq' },
 }
@@ -44,8 +45,8 @@ const FAQS = [
     answer: 'Ta først kontakt med hotellets resepsjon for å løse problemet på stedet. Dersom det ikke hjelper, kontakt oss på post@sydenklar.no eller ring 915 40 824.',
   },
   {
-    question: 'Tilbyr Sydenklar pakkereiser med fly?',
-    answer: 'Ja, vi jobber med å lansere fly + hotell-pakker snart. Meld deg på nyhetsbrevet for å bli varslet når pakkereiser er tilgjengelig.',
+    question: 'Kan jeg få hjelp til hotell, transfer, leiebil og tog?',
+    answer: 'Ja. På siden Skreddersy kan du be om hotellkatalog, transfer, leiebil og tog, med budsjett og kontaktinfo. Du kan også ringe 915 40 824, så bestiller vi for deg. Hver tjeneste er en egen bestilling. Flybilletter selger vi ikke.',
   },
   {
     question: 'Hvordan logger jeg inn på kontoen min?',
@@ -62,6 +63,8 @@ const FAQS = [
 ]
 
 export default function FaqPage() {
+  const faqSchema = buildFaqSchema(FAQS)
+
   return (
     <main className="min-h-screen flex flex-col bg-[var(--sand-light)]">
       <Header solid />
@@ -102,6 +105,10 @@ export default function FaqPage() {
       </div>
 
       <Footer />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
     </main>
   )
 }

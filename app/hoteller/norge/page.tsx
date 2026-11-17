@@ -2,14 +2,14 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
-import { getCitiesByCountry, getHotelCount } from '@/lib/hotel-static-db'
+import { getCitiesByCountry, getHotelCount, getNorwayCountryName } from '@/lib/hotel-static-db'
 import { generateDestinationMetadata, buildBreadcrumbSchema, SITE_URL } from '@/lib/seo'
 import type { Metadata } from 'next'
 
 export const revalidate = 86400
 
 export const metadata: Metadata = generateDestinationMetadata({
-  title: 'Hoteller i Norge – Finn og bestill norske hoteller | Sydenklar',
+  title: 'Hoteller i Norge',
   description:
     'Se og bestill hoteller i hele Norge. Fra hoteller i Oslo, Bergen, Tromsø og Stavanger til sjarmerende overnatting langs fjordene – finn de beste prisene med Sydenklar.',
   path: '/hoteller/norge',
@@ -30,7 +30,8 @@ const CITY_DESCRIPTIONS: Record<string, string> = {
 }
 
 export default function NorgePage() {
-  const cities = getCitiesByCountry('Norway')
+  const norwayName = getNorwayCountryName()
+  const cities = norwayName ? getCitiesByCountry(norwayName) : []
   const totalHotels = cities.reduce((s, c) => s + c.count, 0)
 
   const featuredCities = FEATURED_CITIES

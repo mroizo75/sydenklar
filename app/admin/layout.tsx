@@ -3,7 +3,10 @@ import { LogoutButton } from './LogoutButton'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-export const metadata = { title: 'Admin — Sydenklar' }
+export const metadata = {
+  title: { absolute: 'Admin | Sydenklar' },
+  robots: { index: false, follow: false },
+}
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await requireAdminUser()
@@ -34,6 +37,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <NavLink href="/admin?status=pending">Venter</NavLink>
             <NavLink href="/admin?status=cancelled">Avbestilt</NavLink>
             <NavLink href="/admin/ny-bestilling">+ Ny bestilling</NavLink>
+            <NavLink href="/admin/foresporsler">Forespørsler</NavLink>
             {user.isAdmin && <NavLink href="/admin/brukere">Brukere</NavLink>}
             <NavLink href="/admin/nyhetsbrev">Nyhetsbrev</NavLink>
             <NavLink href="/admin/statistikk">Statistikk</NavLink>

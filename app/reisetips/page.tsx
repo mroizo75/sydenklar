@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'Reisetips og reiseinspirasjon | Sydenklar',
+  title: 'Reisetips og reiseinspirasjon',
   description: 'Guider, hotelltopper og reiseinspirasjoner fra Sydenklar. Finn de beste tipsene for din neste ferie — fra norske fjorder til sol og varme.',
   alternates: { canonical: 'https://www.sydenklar.no/reisetips' },
   openGraph: {

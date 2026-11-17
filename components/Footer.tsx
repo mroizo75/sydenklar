@@ -7,7 +7,7 @@ const footerLinks = {
     { label: "Hoteller", href: "/hoteller" },
     { label: "Destinasjoner", href: "/destinasjoner" },
     { label: "Tilbud", href: "/tilbud" },
-    { label: "Pakkereiser", href: "/pakkereiser" },
+    { label: "Skreddersy", href: "/skreddersy" },
     { label: "Reisetips", href: "/reisetips" },
   ],
   Selskap: [

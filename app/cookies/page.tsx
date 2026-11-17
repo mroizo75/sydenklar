@@ -2,7 +2,7 @@ import ProseLayout from '@/components/ProseLayout'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Cookiepolicy | Sydenklar',
+  title: 'Cookiepolicy',
   description: 'Informasjon om informasjonskapsler (cookies) på Sydenklar.no — hvilke vi bruker og hvorfor.',
   alternates: { canonical: 'https://www.sydenklar.no/cookies' },
 }

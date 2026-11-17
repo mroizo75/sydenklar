@@ -1,8 +1,9 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { HotelPagination } from '@/components/hotels/HotelPagination'
 import {
   findCountryBySlug,
   findCityBySlug,
@@ -20,8 +21,17 @@ import type { Metadata } from 'next'
 
 export const revalidate = 3600
 
+const PAGE_SIZE = 48
+
 interface Props {
   params: Promise<{ land: string; by: string }>
+  searchParams: Promise<{ side?: string }>
+}
+
+function readPage(value: string | undefined): number {
+  const page = Number.parseInt(value ?? '1', 10)
+  if (!Number.isFinite(page) || page < 1) return 1
+  return page
 }
 
 const COUNTRY_DISPLAY: Record<string, string> = {
@@ -55,33 +65,47 @@ const STARS: Record<number, string> = {
   1: '★',
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { land, by } = await params
+  const { side } = await searchParams
+  if (land === 'norway') permanentRedirect(`/hoteller/norge/${by}`)
   const countryName = findCountryBySlug(land)
   if (!countryName) return {}
+  if (countryName === 'Norway' || countryName === 'Norge') permanentRedirect(`/hoteller/norge/${by}`)
   const cityName = findCityBySlug(countryName, by)
   if (!cityName) return {}
 
   const countryDisplay = displayCountry(countryName)
   const total = getHotelCountByCity(countryName, cityName)
+  const page = readPage(side)
+  const path = `/hoteller/${land}/${by}`
 
   return generateDestinationMetadata({
-    title: `Hoteller i ${cityName} – Sammenlign ${total} hoteller | Sydenklar`,
-    description: `Finn og bestill hotell i ${cityName}, ${countryDisplay}. Sammenlign ${total} hoteller med de beste prisene på Sydenklar.`,
-    path: `/hoteller/${land}/${by}`,
+    title: page > 1
+      ? `Hoteller i ${cityName} – side ${page}`
+      : `Hoteller i ${cityName} – ${total} hoteller`,
+    description: `Finn og bestill hotell i ${cityName}, ${countryDisplay}. Sammenlign ${total} hoteller, se beliggenhet og bestill overnatting hos Sydenklar.`,
+    path: page > 1 ? `${path}?side=${page}` : path,
   })
 }
 
-export default async function ByPage({ params }: Props) {
+export default async function ByPage({ params, searchParams }: Props) {
   const { land, by } = await params
+  const { side } = await searchParams
+  if (land === 'norway') permanentRedirect(`/hoteller/norge/${by}`)
   const countryName = findCountryBySlug(land)
   if (!countryName) notFound()
+  if (countryName === 'Norway' || countryName === 'Norge') permanentRedirect(`/hoteller/norge/${by}`)
 
   const cityName = findCityBySlug(countryName, by)
   if (!cityName) notFound()
 
-  const hotels = getHotelsByCity(countryName, cityName, 48)
   const total = getHotelCountByCity(countryName, cityName)
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const page = readPage(side)
+  if (page > pageCount) notFound()
+
+  const hotels = getHotelsByCity(countryName, cityName, PAGE_SIZE, (page - 1) * PAGE_SIZE)
   const countryDisplay = displayCountry(countryName)
 
   const breadcrumb = buildBreadcrumbSchema([
@@ -148,7 +172,7 @@ export default async function ByPage({ params }: Props) {
                     {imageUrl ? (
                       <Image
                         src={imageUrl}
-                        alt={hotel.name ?? ''}
+                        alt={`${hotel.name ?? 'Hotell'} i ${cityName}`}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -179,16 +203,7 @@ export default async function ByPage({ params }: Props) {
             })}
           </div>
 
-          {total > 48 && (
-            <div className="mt-10 text-center">
-              <Link
-                href={`/hoteller?destinasjon=${encodeURIComponent(cityName)}`}
-                className="inline-flex items-center gap-2 border border-[var(--border)] bg-white hover:bg-[var(--sand)] text-[var(--deep)] font-medium px-8 py-3 rounded-full transition-colors"
-              >
-                Se alle {total.toLocaleString('nb-NO')} hoteller i {cityName}
-              </Link>
-            </div>
-          )}
+          <HotelPagination page={page} pageCount={pageCount} path={`/hoteller/${land}/${by}`} />
         </div>
       </div>
 

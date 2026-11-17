@@ -1,17 +1,27 @@
-import type { MetadataRoute } from "next";
+import type { MetadataRoute } from 'next'
 
-const siteUrl = "https://www.sydenklar.no";
+const siteUrl = 'https://www.sydenklar.no'
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
-        userAgent: "*",
-        allow: "/",
-        disallow: ["/api/", "/admin/", "/_next/", "/studio/"],
+        userAgent: '*',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/admin/',
+          '/konto',
+          '/logg-inn',
+          '/betal/',
+          '/booking-bekreftelse',
+          '/avbestill',
+          '/hotell/',
+          '/nyhetsbrev/',
+        ],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
     host: siteUrl,
-  };
+  }
 }

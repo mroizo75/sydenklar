@@ -6,9 +6,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 
-const navLinks = [
+const navLinks: { label: string; href: string; badge?: string }[] = [
   { label: "Hoteller", href: "/hoteller" },
-  { label: "Pakkereiser", href: "/pakkereiser", badge: "Snart" },
+  { label: "Skreddersy", href: "/skreddersy" },
   { label: "Tilbud", href: "/tilbud" },
   { label: "Destinasjoner", href: "/destinasjoner" },
 ];

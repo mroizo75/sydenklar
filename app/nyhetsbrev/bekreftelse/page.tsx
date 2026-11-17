@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Påmelding bekreftet | Sydenklar',
+  title: 'Påmelding bekreftet',
   robots: { index: false, follow: false },
 }
 

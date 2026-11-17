@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -49,8 +49,10 @@ function displayName(countryName: string): string {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { land } = await params
+  if (land === 'norway') permanentRedirect('/hoteller/norge')
   const countryName = findCountryBySlug(land)
   if (!countryName) return {}
+  if (countryName === 'Norway' || countryName === 'Norge') permanentRedirect('/hoteller/norge')
 
   const display = displayName(countryName)
   return generateDestinationMetadata({
@@ -62,8 +64,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LandPage({ params }: Props) {
   const { land } = await params
+  if (land === 'norway') permanentRedirect('/hoteller/norge')
   const countryName = findCountryBySlug(land)
   if (!countryName) notFound()
+  if (countryName === 'Norway' || countryName === 'Norge') permanentRedirect('/hoteller/norge')
 
   const cities = getCitiesByCountry(countryName)
   if (cities.length === 0) notFound()

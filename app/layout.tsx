@@ -31,14 +31,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "nb_NO",
-    url: siteUrl,
     siteName: "Sydenklar",
-    title: "Sydenklar – Finn ditt perfekte hotell",
-    description:
-      "Søk og sammenlign hoteller over hele verden. Finn de beste prisene og bestill drømmeferien enkelt.",
     images: [
       {
-        url: `${siteUrl}/og-image.jpg`,
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Sydenklar – Finn ditt perfekte hotell",
@@ -47,11 +43,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sydenklar – Finn ditt perfekte hotell",
-    description:
-      "Søk og sammenlign hoteller over hele verden. Finn de beste prisene enkelt.",
-    images: [`${siteUrl}/og-image.jpg`],
-    creator: "@sydenklar",
+    images: ["/og-image.jpg"],
   },
   robots: {
     index: true,
@@ -62,13 +54,6 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
       "max-image-preview": "large",
       "max-snippet": -1,
-    },
-  },
-  alternates: {
-    canonical: siteUrl,
-    languages: {
-      "nb-NO": siteUrl,
-      "x-default": siteUrl,
     },
   },
   icons: {
@@ -119,6 +104,8 @@ export default function RootLayout({
                   "@type": "ImageObject",
                   url: `${siteUrl}/logo.png`,
                 },
+                email: "post@sydenklar.no",
+                telephone: "+4791540824",
               },
             }),
           }}

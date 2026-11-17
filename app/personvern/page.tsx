@@ -2,7 +2,7 @@ import ProseLayout from '@/components/ProseLayout'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Personvernerklæring | Sydenklar',
+  title: 'Personvernerklæring',
   description: 'Les om hvordan Sydenklar behandler dine personopplysninger i henhold til GDPR og norsk personopplysningslov.',
   alternates: { canonical: 'https://www.sydenklar.no/personvern' },
 }

@@ -3,7 +3,7 @@ import ProseLayout from '@/components/ProseLayout'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Slik bestiller du hotell | Sydenklar',
+  title: 'Slik bestiller du hotell',
   description: 'Steg-for-steg veiledning for å søke, velge og bestille hotell på Sydenklar.no.',
   alternates: { canonical: 'https://www.sydenklar.no/hjelp/bestilling' },
 }

@@ -2,7 +2,7 @@ import ProseLayout from '@/components/ProseLayout'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Tilgjengelighetserklæring | Sydenklar',
+  title: 'Tilgjengelighetserklæring',
   description: 'Sydenklar sitt arbeid med universell utforming og tilgjengelighet på nett etter WCAG 2.1.',
   alternates: { canonical: 'https://www.sydenklar.no/tilgjengelighet' },
 }

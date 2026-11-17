@@ -4,7 +4,7 @@ import Footer from "@/components/Footer"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Høstferie 2026 – Populære reisemål | Sydenklar.no",
+  title: "Høstferie 2026 – Populære reisemål",
   description:
     "Planlegg høstferien 2026! Gran Canaria, Kreta, Tenerife, Antalya og flere solrike reisemål. Finn og sammenlign hoteller med Sydenklar.",
   alternates: { canonical: "https://www.sydenklar.no/hostferie" },

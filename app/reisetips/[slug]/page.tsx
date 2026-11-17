@@ -24,12 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!article) return {}
 
   return {
-    title: `${article.title} | Sydenklar Reisetips`,
+    title: article.title,
     description: article.description,
     alternates: { canonical: `${SITE_URL}/reisetips/${slug}` },
     openGraph: {
       type: 'article',
-      title: article.title,
+      title: `${article.title} | Sydenklar`,
       description: article.description,
       url: `${SITE_URL}/reisetips/${slug}`,
       publishedTime: article.publishedAt,

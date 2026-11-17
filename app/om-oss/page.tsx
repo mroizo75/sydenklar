@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Om Sydenklar | Norsk reiseportal for hoteller',
+  title: 'Om oss – norsk reiseportal for hoteller',
   description: 'Sydenklar er en norsk reiseportal som hjelper deg å finne og bestille de beste hotellene i Norge og verden. Les mer om oss og vår misjon.',
   alternates: { canonical: 'https://www.sydenklar.no/om-oss' },
 }
@@ -69,7 +69,7 @@ export default function OmOssPage() {
               Vi er et norsk selskap, og vi snakker samme språk som deg. Hos Sydenklar finner du hoteller i over 190 land, men alltid med norsk betjening, priser i kroner og vilkår du forstår.
             </p>
             <p>
-              Snart lanserer vi pakkereiser med fly og hotell — alt samlet på ett sted, til de beste prisene.
+              Trenger du mer enn hotell, kan du be om et skreddersydd tilbud. Transfer, leiebil og andre bakketjenester prises hver for seg. Fly formidler vi videre, så den billetten blir en egen avtale.
             </p>
           </div>
 

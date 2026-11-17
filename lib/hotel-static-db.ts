@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3'
+import { hotelFitsPreferences, isFacilityId, type FacilityId } from './hotel-preferences'
 import path from 'path'
 import fs from 'fs'
 
@@ -480,6 +481,66 @@ export function getHotelsByCity(
   }
 }
 
+export function findHotelBySlug(
+  countryName: string,
+  cityName: string,
+  hotelSlug: string
+): HotelStaticRecord | null {
+  try {
+    const rows = getDb()
+      .prepare(
+        `SELECT id FROM hotels
+         WHERE country_name = ? AND city_name = ? AND id IS NOT NULL`
+      )
+      .all(countryName, cityName) as { id: string }[]
+    const match = rows.find(row => slugify(row.id) === hotelSlug)
+    if (!match) return null
+    return getHotelById(match.id)
+  } catch {
+    return null
+  }
+}
+
+export function searchHotelsForCatalog(
+  place: string,
+  options: { limit?: number; starsMin?: number; facilities?: string[] } = {},
+): HotelStaticRecord[] {
+  const limit = options.limit ?? 18
+  const starsMin = options.starsMin ?? 0
+  const facilities = (options.facilities ?? []).filter(isFacilityId)
+  const tokens = place
+    .split(/[,/]|\sog\s/i)
+    .map(part => part.trim())
+    .filter(part => part.length >= 3)
+  if (tokens.length === 0) return []
+
+  try {
+    const statement = getDb().prepare(
+      `SELECT * FROM hotels
+       WHERE city_name LIKE ? OR country_name LIKE ? OR region_name LIKE ?
+       ORDER BY star_rating DESC, name
+       LIMIT ?`
+    )
+    const seen = new Set<string>()
+    const hotels: HotelStaticRecord[] = []
+    for (const token of tokens) {
+      const rows = statement.all(`%${token}%`, `%${token}%`, `%${token}%`, 80) as any[]
+      for (const row of rows) {
+        const hotel = deserializeRow(row)
+        if (seen.has(hotel.id)) continue
+        seen.add(hotel.id)
+        if (!hotelFitsPreferences(hotel.star_rating, hotel.amenity_groups, starsMin, facilities as FacilityId[])) continue
+        hotels.push(hotel)
+      }
+    }
+    return hotels
+      .sort((a, b) => (b.star_rating ?? 0) - (a.star_rating ?? 0))
+      .slice(0, limit)
+  } catch {
+    return []
+  }
+}
+
 export function getHotelCountByCity(countryName: string, cityName: string): number {
   try {
     const row = getDb()
@@ -489,6 +550,10 @@ export function getHotelCountByCity(countryName: string, cityName: string): numb
   } catch {
     return 0
   }
+}
+
+export function getNorwayCountryName(): string | null {
+  return findCountryBySlug('norge') ?? findCountryBySlug('norway')
 }
 
 export function findCountryBySlug(slug: string): string | null {

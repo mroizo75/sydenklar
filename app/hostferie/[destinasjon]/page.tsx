@@ -178,7 +178,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const dest = DESTINATIONS[destinasjon]
   if (!dest) return {}
   return {
-    title: `Høstferie ${dest.name} 2026 – Hoteller & tips | Sydenklar`,
+    title: `Høstferie ${dest.name} 2026 – Hoteller og tips`,
     description: `Planlegg høstferie til ${dest.name}, ${dest.country}. ${dest.temp} i oktober. Finn de beste hotellene og få tips for en perfekt ferie.`,
     alternates: { canonical: `https://www.sydenklar.no/hostferie/${dest.slug}` },
   }

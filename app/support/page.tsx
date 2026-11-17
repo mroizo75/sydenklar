@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Kundestøtte | Sydenklar',
+  title: 'Kundestøtte',
   description: 'Få hjelp med booking, avbestilling eller andre spørsmål. Sydenklar kundestøtte svarer deg raskt.',
   alternates: { canonical: 'https://www.sydenklar.no/support' },
 }

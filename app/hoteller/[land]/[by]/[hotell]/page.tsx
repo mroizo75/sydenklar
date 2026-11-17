@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import {
   findCountryBySlug,
   findCityBySlug,
+  findHotelBySlug,
   getHotelsByCity,
   slugify,
 } from '@/lib/hotel-static-db'
@@ -13,6 +14,7 @@ import {
   generateHotelMetadata,
   buildBreadcrumbSchema,
   buildHotelSchema,
+  hotelDescriptionParagraphs,
   SITE_URL,
 } from '@/lib/seo'
 import type { Metadata } from 'next'
@@ -46,51 +48,68 @@ function displayCountry(name: string): string {
   return COUNTRY_DISPLAY[name] ?? name
 }
 
+function resolveCountry(land: string): string | null {
+  if (land === 'norge') return findCountryBySlug('norge') ?? findCountryBySlug('norway')
+  return findCountryBySlug(land)
+}
+
+function isNorway(countryName: string): boolean {
+  return countryName === 'Norway' || countryName === 'Norge'
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { land, by, hotell } = await params
-  const countryName = findCountryBySlug(land)
+  const countryName = resolveCountry(land)
   if (!countryName) return {}
+  if (isNorway(countryName) && land !== 'norge') {
+    permanentRedirect(`/hoteller/norge/${by}/${hotell}`)
+  }
   const cityName = findCityBySlug(countryName, by)
   if (!cityName) return {}
 
-  const hotels = getHotelsByCity(countryName, cityName, 200)
-  const hotel = hotels.find(h => slugify(h.id) === hotell)
+  const hotel = findHotelBySlug(countryName, cityName, hotell)
   if (!hotel) return {}
 
+  const countrySlug = isNorway(countryName) ? 'norge' : land
   return generateHotelMetadata({
     hotel,
-    path: `/hoteller/${land}/${by}/${hotell}`,
+    path: `/hoteller/${countrySlug}/${by}/${hotell}`,
   })
 }
 
 export default async function HotellPage({ params }: Props) {
   const { land, by, hotell } = await params
-  const countryName = findCountryBySlug(land)
+  const countryName = resolveCountry(land)
   if (!countryName) notFound()
+  if (isNorway(countryName) && land !== 'norge') {
+    permanentRedirect(`/hoteller/norge/${by}/${hotell}`)
+  }
 
   const cityName = findCityBySlug(countryName, by)
   if (!cityName) notFound()
 
-  const hotels = getHotelsByCity(countryName, cityName, 200)
-  const hotel = hotels.find(h => slugify(h.id) === hotell)
+  const hotel = findHotelBySlug(countryName, cityName, hotell)
   if (!hotel) notFound()
 
+  const countrySlug = isNorway(countryName) ? 'norge' : land
   const countryDisplay = displayCountry(countryName)
-  const pageUrl = `${SITE_URL}/hoteller/${land}/${by}/${hotell}`
+  const pageUrl = `${SITE_URL}/hoteller/${countrySlug}/${by}/${hotell}`
 
   const breadcrumb = buildBreadcrumbSchema([
     { name: 'Hjem', url: SITE_URL },
     { name: 'Hoteller', url: `${SITE_URL}/hoteller` },
-    { name: countryDisplay, url: `${SITE_URL}/hoteller/${land}` },
-    { name: cityName, url: `${SITE_URL}/hoteller/${land}/${by}` },
+    { name: countryDisplay, url: `${SITE_URL}/hoteller/${countrySlug}` },
+    { name: cityName, url: `${SITE_URL}/hoteller/${countrySlug}/${by}` },
     { name: hotel.name ?? '', url: pageUrl },
   ])
 
   const hotelSchema = buildHotelSchema(hotel, pageUrl)
 
-  const relatedHotels = hotels
+  const relatedHotels = getHotelsByCity(countryName, cityName, 12)
     .filter(h => slugify(h.id) !== hotell && (h.images ?? []).length > 0)
     .slice(0, 6)
+
+  const descriptionParagraphs = hotelDescriptionParagraphs(hotel.description).slice(0, 4)
 
   const images = (hotel.images ?? []).slice(0, 6).map(img =>
     img.replace('{size}', '1024x768')
@@ -122,9 +141,9 @@ export default async function HotellPage({ params }: Props) {
             <span>/</span>
             <Link href="/hoteller" className="hover:text-white transition-colors">Hoteller</Link>
             <span>/</span>
-            <Link href={`/hoteller/${land}`} className="hover:text-white transition-colors">{countryDisplay}</Link>
+            <Link href={`/hoteller/${countrySlug}`} className="hover:text-white transition-colors">{countryDisplay}</Link>
             <span>/</span>
-            <Link href={`/hoteller/${land}/${by}`} className="hover:text-white transition-colors">{cityName}</Link>
+            <Link href={`/hoteller/${countrySlug}/${by}`} className="hover:text-white transition-colors">{cityName}</Link>
             <span>/</span>
             <span className="text-white line-clamp-1">{hotel.name}</span>
           </nav>
@@ -138,7 +157,7 @@ export default async function HotellPage({ params }: Props) {
               <div className="relative w-full aspect-[16/7] bg-[var(--sand)]">
                 <Image
                   src={mainImage}
-                  alt={hotel.name ?? ''}
+                  alt={`${hotel.name ?? 'Hotell'} i ${cityName}`}
                   fill
                   className="object-cover"
                   priority
@@ -188,13 +207,16 @@ export default async function HotellPage({ params }: Props) {
                 </Link>
               </div>
 
-              {hotel.description && (
+              {descriptionParagraphs.length > 0 && (
                 <div className="mb-8">
                   <h2 className="font-display text-xl text-[var(--deep)] mb-3">Om hotellet</h2>
-                  <p className="text-[var(--muted)] leading-relaxed">
-                    {hotel.description.slice(0, 600)}
-                    {hotel.description.length > 600 ? '…' : ''}
-                  </p>
+                  <div className="space-y-3">
+                    {descriptionParagraphs.map((paragraph, index) => (
+                      <p key={index} className="text-[var(--muted)] leading-relaxed">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -262,7 +284,7 @@ export default async function HotellPage({ params }: Props) {
                   Flere hoteller i {cityName}
                 </h2>
                 <Link
-                  href={`/hoteller/${land}/${by}`}
+                  href={`/hoteller/${countrySlug}/${by}`}
                   className="text-sm text-[var(--sea)] hover:underline hidden sm:inline"
                 >
                   Se alle →
@@ -276,14 +298,14 @@ export default async function HotellPage({ params }: Props) {
                   return (
                     <Link
                       key={h.id}
-                      href={`/hoteller/${land}/${by}/${hSlug}`}
+                      href={`/hoteller/${countrySlug}/${by}/${hSlug}`}
                       className="group bg-white rounded-2xl border border-[var(--border)] overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                     >
                       <div className="relative w-full aspect-[4/3] bg-[var(--sand)]">
                         {thumb && (
                           <Image
                             src={thumb}
-                            alt={h.name ?? ''}
+                            alt={`${h.name ?? 'Hotell'} i ${cityName}`}
                             fill
                             className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -309,7 +331,7 @@ export default async function HotellPage({ params }: Props) {
               </div>
               <div className="mt-5 text-center sm:hidden">
                 <Link
-                  href={`/hoteller/${land}/${by}`}
+                  href={`/hoteller/${countrySlug}/${by}`}
                   className="text-sm text-[var(--sea)] hover:underline"
                 >
                   Se alle hoteller i {cityName} →
@@ -320,7 +342,7 @@ export default async function HotellPage({ params }: Props) {
 
           <div className="mt-6 text-center">
             <Link
-              href={`/hoteller/${land}/${by}`}
+              href={`/hoteller/${countrySlug}/${by}`}
               className="text-sm text-[var(--sea)] hover:underline"
             >
               ← Se alle hoteller i {cityName}

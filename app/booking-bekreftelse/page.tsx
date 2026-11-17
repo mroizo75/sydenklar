@@ -9,7 +9,7 @@ import PurchasePixel from './PurchasePixel'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Booking bekreftet – Sydenklar.no',
+  title: 'Booking bekreftet',
   description: 'Din hotellbooking er bekreftet.',
   robots: { index: false, follow: false },
 }

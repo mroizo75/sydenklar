@@ -2,7 +2,7 @@ import ProseLayout from '@/components/ProseLayout'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Vilkår og betingelser | Sydenklar',
+  title: 'Vilkår og betingelser',
   description: 'Kjøpsvilkår og generelle betingelser for bruk av Sydenklar.no — hotellbooking, betaling og avbestilling.',
   alternates: { canonical: 'https://www.sydenklar.no/vilkar' },
 }
@@ -44,8 +44,8 @@ export default function VilkarPage() {
         <p className="!mb-0"><strong>Merk:</strong> Angrerettloven §22 bokstav h gjør unntak for overnatting, transport, serveringstjenester og fritidsaktiviteter på en bestemt dato eller i et bestemt tidsrom. Kjøp av hotellrom på Sydenklar er derfor <strong>ikke</strong> gjenstand for 14-dagers angrerett. Dine rettigheter reguleres av hotellets egne avbestillingsvilkår slik de fremgår av bekreftelsen.</p>
       </div>
 
-      <h2>6. Pakkereiser</h2>
-      <p>Sydenklar tilbyr snart kombinerte pakkereiser med fly og hotell. Slike pakker vil være regulert av <strong>lov av 15. juni 2018 nr. 32 om pakkereiser og reisegaranti</strong> (Pakkereiseloven), som gjennomfører EU-direktiv 2015/2302 i norsk rett. Ved lansering av pakketilbud vil egne vilkår for pakkereiser gjelde og presenteres tydelig ved bestilling.</p>
+      <h2>6. Hotell og tilleggstjenester er egne bestillinger</h2>
+      <p>Sydenklar selger hotellopphold. Transfer, leiebil og andre bakketjenester kan tilbys som egne bestillinger, med egen pris og egne vilkår. Sydenklar selger ikke flybilletter og setter ikke sammen pakkereiser. Ber du om hjelp til fly, formidler vi forespørselen videre til flyselskap eller et reisebyrå. Den avtalen inngås direkte med dem og inngår ikke i Sydenklar sitt tilbud. Reisegaranti etter pakkereiseloven gjelder derfor ikke for bestillinger hos Sydenklar.</p>
 
       <h2>7. Reisedokumenter og innreisekrav</h2>
       <p>Det er ditt ansvar å ha gyldig pass, visum og oppfylle helseformelle krav for destinasjonen. Sydenklar er ikke ansvarlig for nektet innreise eller konsekvenser av manglende dokumenter.</p>

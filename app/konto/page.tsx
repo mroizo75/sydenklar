@@ -7,7 +7,7 @@ import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Min konto – Sydenklar.no',
+  title: 'Min konto',
   description: 'Se dine hotellbookinger og kontoinformasjon.',
   robots: { index: false, follow: false },
 }

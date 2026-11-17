@@ -4,8 +4,14 @@ import Footer from '@/components/Footer'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Destinasjoner – Sydenklar.no',
-  description: 'Nordmenns mest populære reisemål — Gran Canaria, Kreta, Oslo, Tromsø, Tenerife, Antalya og mange flere. Finn og sammenlign hoteller på Sydenklar.no.',
+  title: 'Destinasjoner',
+  description: 'Nordmenns mest populære reisemål — Gran Canaria, Kreta, Oslo, Tromsø, Tenerife, Antalya og mange flere. Finn og sammenlign hoteller på Sydenklar.',
+  alternates: { canonical: 'https://www.sydenklar.no/destinasjoner' },
+  openGraph: {
+    title: 'Destinasjoner | Sydenklar',
+    description: 'Nordmenns mest populære reisemål. Finn og sammenlign hoteller på Sydenklar.',
+    url: 'https://www.sydenklar.no/destinasjoner',
+  },
 }
 
 interface Destination {
